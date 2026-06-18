@@ -178,25 +178,6 @@ app.delete('/api/sessions/current', isLoggedIn, (req, res) => {
   });
 });
 
-// POST /api/records  →  add a new numeric record for current user
-app.post('/api/records', isLoggedIn, (req, res) => {
-  const { value } = req.body ?? {};
-
-  const num = Number(value);
-  if (!Number.isFinite(num)) {
-    return res.status(422).json({ error: 'Value must be a finite number.' });
-  }
-
-  const ts = new Date().toISOString();
-  try {
-    const record_id = createRecord({ user_id: req.user.id, value: num, ts });
-    return res.status(201).json({ record_id, user_id: req.user.id, value: num, ts });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Could not create record.' });
-  }
-});
-
 // GET /api/records  →  list current owner's records (user or guest)
 app.get('/api/records', (req, res) => {
   const { owner_type, owner_id } = getOwner(req, res);

@@ -1,6 +1,6 @@
 import { Navbar, Nav, Container, Button } from 'react-bootstrap';
 
-export default function AppNavbar({ user, onLogout, onShowLogin }) {
+export default function AppNavbar({ user, onLogout, onShowLogin, onShowRegister }) {
   return (
     <Navbar bg="dark" variant="dark" expand="lg" sticky="top">
       <Container>
@@ -17,9 +17,14 @@ export default function AppNavbar({ user, onLogout, onShowLogin }) {
               </Button>
             </>
           ) : (
-            <Button variant="outline-light" size="sm" onClick={onShowLogin}>
-              Login
-            </Button>
+            <div className="d-flex gap-2">
+              <Button variant="outline-light" size="sm" onClick={onShowLogin}>
+                Login
+              </Button>
+              <Button variant="light" size="sm" onClick={onShowRegister}>
+                Register
+              </Button>
+            </div>
           )}
         </Nav>
       </Container>

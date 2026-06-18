@@ -51,4 +51,9 @@ function getUserById(id) {
   return db.prepare('SELECT id, name, email FROM users WHERE id = ?').get(id);
 }
 
-module.exports = { seed, getUserByEmail, getUserById };
+function createUser({ id, name, email, hash }) {
+  const stmt = db.prepare('INSERT INTO users (id, name, email, hash) VALUES (?, ?, ?, ?)');
+  return stmt.run(id, name, email, hash);
+}
+
+module.exports = { seed, getUserByEmail, getUserById, createUser };

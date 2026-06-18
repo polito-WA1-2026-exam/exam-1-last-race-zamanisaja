@@ -8,7 +8,8 @@ const LocalStrategy  = require('passport-local').Strategy;
 const bcrypt         = require('bcrypt');
 const SqliteStore    = require('connect-sqlite3')(session);
 
-const { seed, getUserByEmail, getUserById } = require('./db');
+const crypto = require('crypto');
+const { seed, getUserByEmail, getUserById, createUser } = require('./db');
 
 const PORT        = 3001;
 const CLIENT_ORIGIN = 'http://localhost:5173';  // Vite default
@@ -73,6 +74,48 @@ function isLoggedIn(req, res, next) {
 }
 
 // ── Routes ───────────────────────────────────────────────────────────────────
+
+// POST /api/users  →  register (auto-login)
+app.post('/api/users', async (req, res) => {
+  const { name, email, password } = req.body ?? {};
+
+  if (!name || !email || !password) {
+    return res.status(422).json({ error: 'Missing required fields (name, email, password).' });
+  }
+
+  // Very lightweight email sanity check
+  if (!/^\S+@\S+\.\S+$/.test(email)) {
+    return res.status(422).json({ error: 'Invalid email format.' });
+  }
+
+  // Check duplicate early (still handle UNIQUE constraint too)
+  const existing = getUserByEmail(email);
+  if (existing) {
+    return res.status(409).json({ error: 'Email already registered.' });
+  }
+
+  try {
+    const id = crypto.randomUUID();
+    const hash = await bcrypt.hash(password, 10);
+
+    createUser({ id, name, email, hash });
+
+    const user = { id, name, email };
+
+    // Auto-login
+    req.login(user, (err) => {
+      if (err) return res.status(500).json({ error: 'Registration succeeded but login failed.' });
+      return res.status(201).json(user);
+    });
+  } catch (err) {
+    // In case UNIQUE(email) triggers due to race
+    if (String(err.message).includes('UNIQUE')) {
+      return res.status(409).json({ error: 'Email already registered.' });
+    }
+    console.error(err);
+    return res.status(500).json({ error: 'Registration failed.' });
+  }
+});
 
 // POST /api/sessions  →  login
 app.post('/api/sessions', (req, res, next) => {

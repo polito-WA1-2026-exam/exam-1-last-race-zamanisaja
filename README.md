@@ -43,6 +43,7 @@ Open **http://localhost:5173** in your browser.
 
 | Method | Path                      | Auth required | Description         |
 |--------|---------------------------|---------------|---------------------|
-| POST   | /api/sessions             | No            | Login               |
-| GET    | /api/sessions/current     | Yes           | Get logged-in user  |
-| DELETE | /api/sessions/current     | Yes           | Logout              |
+| POST   | /api/users                | No            | Register (auto-login) |
+| POST   | /api/sessions             | No            | Login                 |
+| GET    | /api/sessions/current     | Yes           | Get logged-in user    |
+| DELETE | /api/sessions/current     | Yes           | Logout                |

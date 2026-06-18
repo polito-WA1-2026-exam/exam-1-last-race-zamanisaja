@@ -25,4 +25,7 @@ export const API = {
   login:      (email, password) => request('POST',   '/api/sessions', { email, password }),
   logout:     ()                => request('DELETE',  '/api/sessions/current'),
   getSession: ()                => request('GET',     '/api/sessions/current'),
+
+  // Registration (auto-login server-side)
+  register:   (name, email, password) => request('POST', '/api/users', { name, email, password }),
 };

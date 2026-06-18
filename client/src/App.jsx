@@ -86,20 +86,65 @@ export default function App() {
       />
 
       <Container className="py-5">
+        <div className="text-center mt-4">
+          <h1>Welcome to my page!</h1>
+          {user ? (
+            <p className="text-muted mt-2">
+              You are logged in as <strong>{user.name}</strong>.
+            </p>
+          ) : (
+            <p className="text-muted mt-2">
+              You are browsing as <strong>Guest</strong>.
+            </p>
+          )}
+        </div>
+
+        <div className="mx-auto mt-5" style={{ maxWidth: 720 }}>
+          <h5 className="mb-3">Submit a number</h5>
+          {submitError && <Alert variant="danger">{submitError}</Alert>}
+
+          <Form onSubmit={handleSubmitNumber} className="d-flex gap-2">
+            <Form.Control
+              type="number"
+              value={numValue}
+              onChange={(e) => setNumValue(e.target.value)}
+              placeholder="Enter a number"
+              step="any"
+              required
+            />
+            <Button type="submit" variant="primary">Save</Button>
+          </Form>
+
+          <h6 className="mt-4">Your submissions</h6>
+          <Table striped bordered hover size="sm" className="mt-2">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Value</th>
+                <th>Timestamp</th>
+              </tr>
+            </thead>
+            <tbody>
+              {records.length === 0 ? (
+                <tr><td colSpan={3} className="text-muted">No records yet.</td></tr>
+              ) : (
+                records.map(r => (
+                  <tr key={r.record_id}>
+                    <td>{r.record_id}</td>
+                    <td>{r.value}</td>
+                    <td>{r.ts}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </Table>
+        </div>
+
         {!user && authView === 'login' ? (
           <LoginForm onLogin={handleLogin} />
         ) : !user && authView === 'register' ? (
           <RegisterForm onRegister={handleRegister} />
-        ) : (
-          <div className="text-center mt-5">
-            <h1>Welcome to my page!</h1>
-            {user && (
-              <p className="text-muted mt-2">
-                You are logged in as <strong>{user.name}</strong>.
-              </p>
-            )}
-          </div>
-        )}
+        ) : null}
       </Container>
     </>
   );

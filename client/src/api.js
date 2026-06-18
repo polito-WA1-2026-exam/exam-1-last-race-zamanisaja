@@ -28,4 +28,8 @@ export const API = {
 
   // Registration (auto-login server-side)
   register:   (name, email, password) => request('POST', '/api/users', { name, email, password }),
+
+  // Records
+  createRecord: (value) => request('POST', '/api/records', { value }),
+  listRecords:  ()      => request('GET',  '/api/records'),
 };

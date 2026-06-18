@@ -9,7 +9,7 @@ const bcrypt         = require('bcrypt');
 const SqliteStore    = require('connect-sqlite3')(session);
 
 const crypto = require('crypto');
-const { seed, getUserByEmail, getUserById, createUser } = require('./db');
+const { seed, getUserByEmail, getUserById, createUser, createRecord, listRecordsByUser } = require('./db');
 
 const PORT        = 3001;
 const CLIENT_ORIGIN = 'http://localhost:5173';  // Vite default
@@ -141,6 +141,31 @@ app.delete('/api/sessions/current', isLoggedIn, (req, res) => {
     if (err) return res.status(500).json({ error: 'Logout failed.' });
     res.json({ message: 'Logged out.' });
   });
+});
+
+// GET /api/records  →  list current user's records
+app.get('/api/records', isLoggedIn, (req, res) => {
+  const rows = listRecordsByUser(req.user.id);
+  res.json(rows);
+});
+
+// POST /api/records  →  add a new numeric record for current user
+app.post('/api/records', isLoggedIn, (req, res) => {
+  const { value } = req.body ?? {};
+
+  const num = Number(value);
+  if (!Number.isFinite(num)) {
+    return res.status(422).json({ error: 'Value must be a finite number.' });
+  }
+
+  const ts = new Date().toISOString();
+  try {
+    const record_id = createRecord({ user_id: req.user.id, value: num, ts });
+    return res.status(201).json({ record_id, user_id: req.user.id, value: num, ts });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Could not create record.' });
+  }
 });
 
 // ── Start ────────────────────────────────────────────────────────────────────

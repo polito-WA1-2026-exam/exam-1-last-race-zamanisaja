@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Container, Spinner } from 'react-bootstrap';
+import { Container, Spinner, Form, Button, Alert, Table } from 'react-bootstrap';
 import AppNavbar from './components/AppNavbar.jsx';
 import LoginForm from './components/LoginForm.jsx';
 import RegisterForm from './components/RegisterForm.jsx';
@@ -10,6 +10,10 @@ export default function App() {
   const [authView, setAuthView]      = useState('none');  // 'none' | 'login' | 'register'
   const [checking, setChecking]      = useState(true);    // true while restoring session
 
+  const [numValue, setNumValue]      = useState('');
+  const [submitError, setSubmitError] = useState('');
+  const [records, setRecords]         = useState([]);
+
   // On mount, check whether a session already exists (e.g. after hot-reload)
   useEffect(() => {
     API.getSession()
@@ -17,6 +21,16 @@ export default function App() {
       .catch(() => setUser(null))
       .finally(() => setChecking(false));
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setRecords([]);
+      return;
+    }
+    API.listRecords()
+      .then(setRecords)
+      .catch(() => setRecords([]));
+  }, [user]);
 
   function handleLogin(loggedInUser) {
     setUser(loggedInUser);
@@ -29,11 +43,24 @@ export default function App() {
     setAuthView('none');
   }
 
+  async function handleSubmitNumber(e) {
+    e.preventDefault();
+    setSubmitError('');
+    try {
+      const created = await API.createRecord(numValue);
+      setRecords((old) => [created, ...old]);
+      setNumValue('');
+    } catch (err) {
+      setSubmitError(err.message);
+    }
+  }
+
   async function handleLogout() {
     try {
       await API.logout();
     } finally {
       setUser(null);
+      setRecords([]);
     }
   }
 

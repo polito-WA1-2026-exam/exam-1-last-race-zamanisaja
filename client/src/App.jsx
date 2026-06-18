@@ -13,6 +13,7 @@ export default function App() {
   const [numValue, setNumValue]      = useState('');
   const [submitError, setSubmitError] = useState('');
   const [records, setRecords]         = useState([]);
+  const [recordsSummary, setRecordsSummary] = useState({ highScore: null, globalHighScore: null });
 
   // On mount, check whether a session already exists (e.g. after hot-reload)
   useEffect(() => {
@@ -22,14 +23,15 @@ export default function App() {
       .finally(() => setChecking(false));
   }, []);
 
+  // Load records & summary for the current browser identity (guest) and refresh when user logs in/out
   useEffect(() => {
-    if (!user) {
-      setRecords([]);
-      return;
-    }
     API.listRecords()
       .then(setRecords)
       .catch(() => setRecords([]));
+
+    API.getRecordsSummary()
+      .then(setRecordsSummary)
+      .catch(() => setRecordsSummary({ highScore: null, globalHighScore: null }));
   }, [user]);
 
   function handleLogin(loggedInUser) {
@@ -50,6 +52,7 @@ export default function App() {
       const created = await API.createRecord(numValue);
       setRecords((old) => [created, ...old]);
       setNumValue('');
+      API.getRecordsSummary().then(setRecordsSummary).catch(() => {});
     } catch (err) {
       setSubmitError(err.message);
     }
@@ -76,6 +79,7 @@ export default function App() {
     <>
       <AppNavbar
         user={user}
+        summary={recordsSummary}
         onLogout={handleLogout}
         onShowLogin={() => setAuthView('login')}
         onShowRegister={() => setAuthView('register')}

@@ -9,7 +9,7 @@ const bcrypt         = require('bcrypt');
 const SqliteStore    = require('connect-sqlite3')(session);
 
 const crypto = require('crypto');
-const { seed, getUserByEmail, getUserById, createUser, createRecord, listRecordsByUser } = require('./db');
+const { seed, getUserByEmail, getUserById, createUser, createRecord, listRecordsByOwner, getHighScoreByOwner, getGlobalHighScore } = require('./db');
 
 const PORT        = 3001;
 const CLIENT_ORIGIN = 'http://localhost:5173';  // Vite default
@@ -41,6 +41,41 @@ app.use(session({
 // Passport
 app.use(passport.initialize());
 app.use(passport.session());
+
+// ── Guest identity (cookie-based) ─────────────────────────────────────────
+function parseCookies(cookieHeader) {
+  const out = {};
+  if (!cookieHeader) return out;
+  const parts = cookieHeader.split(';');
+  for (const part of parts) {
+    const [k, ...rest] = part.trim().split('=');
+    if (!k) continue;
+    out[k] = decodeURIComponent(rest.join('=') || '');
+  }
+  return out;
+}
+
+function ensureGuestId(req, res) {
+  const cookies = parseCookies(req.headers.cookie);
+  let guestId = cookies.guestId;
+
+  if (!guestId) {
+    guestId = crypto.randomUUID();
+    // Cookie is readable only by server (HttpOnly).
+    // Since client/server are on different origins in dev, we rely on credentials: 'include'.
+    res.setHeader('Set-Cookie', `guestId=${encodeURIComponent(guestId)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${60*60*24*365}`);
+  }
+
+  req.guestId = guestId;
+}
+
+function getOwner(req, res) {
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    return { owner_type: 'user', owner_id: req.user.id };
+  }
+  ensureGuestId(req, res);
+  return { owner_type: 'guest', owner_id: req.guestId };
+}
 
 // ── Passport local strategy ─────────────────────────────────────────────────
 passport.use(new LocalStrategy(
@@ -143,12 +178,6 @@ app.delete('/api/sessions/current', isLoggedIn, (req, res) => {
   });
 });
 
-// GET /api/records  →  list current user's records
-app.get('/api/records', isLoggedIn, (req, res) => {
-  const rows = listRecordsByUser(req.user.id);
-  res.json(rows);
-});
-
 // POST /api/records  →  add a new numeric record for current user
 app.post('/api/records', isLoggedIn, (req, res) => {
   const { value } = req.body ?? {};
@@ -166,6 +195,41 @@ app.post('/api/records', isLoggedIn, (req, res) => {
     console.error(err);
     return res.status(500).json({ error: 'Could not create record.' });
   }
+});
+
+// GET /api/records  →  list current owner's records (user or guest)
+app.get('/api/records', (req, res) => {
+  const { owner_type, owner_id } = getOwner(req, res);
+  const rows = listRecordsByOwner(owner_type, owner_id);
+  res.json(rows);
+});
+
+// POST /api/records  →  add a new numeric record for current owner
+app.post('/api/records', (req, res) => {
+  const { owner_type, owner_id } = getOwner(req, res);
+  const { value } = req.body ?? {};
+
+  const num = Number(value);
+  if (!Number.isFinite(num)) {
+    return res.status(422).json({ error: 'Value must be a finite number.' });
+  }
+
+  const ts = new Date().toISOString();
+  try {
+    const record_id = createRecord({ owner_type, owner_id, value: num, ts });
+    return res.status(201).json({ record_id, owner_type, owner_id, value: num, ts });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Could not create record.' });
+  }
+});
+
+// GET /api/records/summary → { highScore, globalHighScore }
+app.get('/api/records/summary', (req, res) => {
+  const { owner_type, owner_id } = getOwner(req, res);
+  const highScore = getHighScoreByOwner(owner_type, owner_id);
+  const globalHighScore = getGlobalHighScore();
+  res.json({ highScore, globalHighScore });
 });
 
 // ── Start ────────────────────────────────────────────────────────────────────

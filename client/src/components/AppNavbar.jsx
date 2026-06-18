@@ -1,12 +1,16 @@
 import { Navbar, Nav, Container, Button } from 'react-bootstrap';
 
-export default function AppNavbar({ user, onLogout, onShowLogin, onShowRegister }) {
+export default function AppNavbar({ user, summary, onLogout, onShowLogin, onShowRegister }) {
   return (
     <Navbar bg="dark" variant="dark" expand="lg" sticky="top">
       <Container>
         <Navbar.Brand href="#">My App</Navbar.Brand>
 
         <Nav className="ms-auto align-items-center">
+          <Navbar.Text className="me-3">
+            High score: <strong>{summary?.highScore ?? '—'}</strong>
+            <span className="ms-2 text-secondary">(Global: {summary?.globalHighScore ?? '—'})</span>
+          </Navbar.Text>
           {user ? (
             <>
               <Navbar.Text className="me-3">

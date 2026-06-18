@@ -32,4 +32,5 @@ export const API = {
   // Records
   createRecord: (value) => request('POST', '/api/records', { value }),
   listRecords:  ()      => request('GET',  '/api/records'),
+  getRecordsSummary: () => request('GET', '/api/records/summary'),
 };

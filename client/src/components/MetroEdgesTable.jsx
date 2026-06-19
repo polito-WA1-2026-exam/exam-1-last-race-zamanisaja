@@ -1,0 +1,85 @@
+import { useMemo } from 'react';
+import { Table, Form, Badge } from 'react-bootstrap';
+
+export default function MetroEdgesTable({
+  graph,
+  selectedEdgeIds,
+  onToggleEdge,
+}) {
+  const nodeNameById = useMemo(() => {
+    const m = new Map();
+    for (const n of graph?.nodes ?? []) m.set(n.id, n.name_en);
+    return m;
+  }, [graph]);
+
+  const lineById = useMemo(() => {
+    const m = new Map();
+    for (const l of graph?.lines ?? []) m.set(l.id, l);
+    return m;
+  }, [graph]);
+
+  const selected = useMemo(() => new Set((selectedEdgeIds ?? []).map(Number)), [selectedEdgeIds]);
+
+  const edges = useMemo(() => {
+    const es = [...(graph?.edges ?? [])];
+    es.sort((a, b) => {
+      const la = a.line_id?.localeCompare(b.line_id ?? '') ?? 0;
+      if (la !== 0) return la;
+      const sa = (a.sort_order ?? 0) - (b.sort_order ?? 0);
+      if (sa !== 0) return sa;
+      return Number(a.id) - Number(b.id);
+    });
+    return es;
+  }, [graph]);
+
+  return (
+    <div style={{ maxHeight: 720, overflow: 'auto', border: '1px solid rgba(0,0,0,.12)', borderRadius: 12 }}>
+      <Table hover size="sm" className="mb-0" style={{ margin: 0 }}>
+        <thead style={{ position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
+          <tr>
+            <th style={{ width: 44 }}>Pick</th>
+            <th style={{ width: 64 }}>Line</th>
+            <th>Edge</th>
+          </tr>
+        </thead>
+        <tbody>
+          {edges.length === 0 ? (
+            <tr><td colSpan={3} className="text-muted">No edges.</td></tr>
+          ) : (
+            edges.map(e => {
+              const a = nodeNameById.get(e.from_node_id) ?? e.from_node_id;
+              const b = nodeNameById.get(e.to_node_id) ?? e.to_node_id;
+              const isChecked = selected.has(Number(e.id));
+              const line = lineById.get(e.line_id);
+              const color = line?.color_hex ?? '#999';
+
+              return (
+                <tr key={e.id}>
+                  <td>
+                    <Form.Check
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => onToggleEdge?.(Number(e.id))}
+                      aria-label={`Select edge ${a} to ${b}`}
+                    />
+                  </td>
+                  <td>
+                    <Badge bg="light" text="dark" style={{ border: `2px solid ${color}` }}>
+                      {e.line_id}
+                    </Badge>
+                  </td>
+                  <td>
+                    <div style={{ fontWeight: 600 }}>{a} → {b}</div>
+                    <div className="text-muted" style={{ fontSize: 12 }}>
+                      id: {e.id} • sort: {e.sort_order ?? 0}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </Table>
+    </div>
+  );
+}

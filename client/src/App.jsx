@@ -4,6 +4,7 @@ import AppNavbar from './components/AppNavbar.jsx';
 import LoginForm from './components/LoginForm.jsx';
 import RegisterForm from './components/RegisterForm.jsx';
 import TehranMetroMap from './components/TehranMetroMap.jsx';
+import MetroEdgesTable from './components/MetroEdgesTable.jsx';
 import { API } from './api.js';
 
 export default function App() {
@@ -17,6 +18,16 @@ export default function App() {
   const [recordsSummary, setRecordsSummary] = useState({ highScore: null, globalHighScore: null });
   const [metroGraph, setMetroGraph] = useState(null);
   const [metroError, setMetroError] = useState('');
+  const [selectedEdgeIds, setSelectedEdgeIds] = useState([]);
+
+  function toggleEdge(edgeId) {
+    setSelectedEdgeIds((prev) => {
+      const s = new Set(prev);
+      if (s.has(edgeId)) s.delete(edgeId);
+      else s.add(edgeId);
+      return Array.from(s);
+    });
+  }
 
   // On mount, check whether a session already exists (e.g. after hot-reload)
   useEffect(() => {
@@ -113,11 +124,8 @@ export default function App() {
             </p>
           )}
         </div>
-        <div className="mx-auto mt-5" style={{ maxWidth: 1100 }}>
-          <div className="d-flex align-items-baseline justify-content-between gap-3 flex-wrap">
-            <h5 className="mb-2">Tehran Metro (Lines 1–4)</h5>
-            <div className="text-muted small">Schematic map — click stations later for game actions</div>
-          </div>
+        <div className="mx-auto mt-5" style={{ maxWidth: 1200 }}>
+          <h5 className="mb-3">Tehran Metro (game board)</h5>
 
           {metroError && <Alert variant="danger">{metroError}</Alert>}
 
@@ -126,7 +134,32 @@ export default function App() {
               <Spinner animation="border" />
             </div>
           ) : (
-            <TehranMetroMap graph={metroGraph} />
+            <div className="d-grid"
+              style={{
+                gridTemplateColumns: '0.4fr 1.3fr', // map smaller, table wider
+                gap: 16,
+                alignItems: 'start',
+              }}
+          >
+              <div>
+                <TehranMetroMap graph={metroGraph} highlightEdgeIds={selectedEdgeIds} />
+              </div>
+
+              <div>
+                <div className="d-flex justify-content-between align-items-baseline mb-2">
+                  <div className="text-muted">Edges</div>
+                  <div className="text-muted" style={{ fontSize: 12 }}>
+                    selected: <strong>{selectedEdgeIds.length}</strong>
+                  </div>
+                </div>
+
+                <MetroEdgesTable
+                  graph={metroGraph}
+                  selectedEdgeIds={selectedEdgeIds}
+                  onToggleEdge={toggleEdge}
+                />
+              </div>
+            </div>
           )}
         </div>
         <div className="mx-auto mt-5" style={{ maxWidth: 720 }}>

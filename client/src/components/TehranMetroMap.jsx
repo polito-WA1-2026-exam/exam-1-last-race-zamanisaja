@@ -280,7 +280,7 @@ const styles = {
   svg: {
     display: 'block',
     width: '100%',
-    minWidth: 1100, // allows horizontal scroll on small screens
+    minWidth: 300, // allows horizontal scroll on small screens
     height: 'auto',
   },
   hint: {

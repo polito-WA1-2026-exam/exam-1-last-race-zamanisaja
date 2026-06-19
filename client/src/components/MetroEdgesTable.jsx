@@ -33,7 +33,7 @@ export default function MetroEdgesTable({
   }, [graph]);
 
   return (
-    <div style={{ maxHeight: 720, overflow: 'auto', border: '1px solid rgba(0,0,0,.12)', borderRadius: 12 }}>
+    <div style={{ height: '100%', overflow: 'auto', border: '1px solid rgba(0,0,0,.12)', borderRadius: 12 }}>
       <Table hover size="sm" className="mb-0" style={{ margin: 0 }}>
         <thead style={{ position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
           <tr>

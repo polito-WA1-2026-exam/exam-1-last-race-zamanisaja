@@ -19,6 +19,9 @@ export default function App() {
 
   const [selectedEdgeIds, setSelectedEdgeIds] = useState([]);
 
+  // Phase: false = map-only (full width), true = split view (map + edges)
+  const [ready, setReady] = useState(false);
+
   function toggleEdge(edgeId) {
     setSelectedEdgeIds((prev) => {
       const s = new Set(prev);
@@ -36,7 +39,7 @@ export default function App() {
       .finally(() => setChecking(false));
   }, []);
 
-  // Keep navbar summary working (you can remove this later if you remove the feature server-side)
+  // Keep navbar summary working
   useEffect(() => {
     API.getRecordsSummary()
       .then(setRecordsSummary)
@@ -70,6 +73,7 @@ export default function App() {
     } finally {
       setUser(null);
       setSelectedEdgeIds([]);
+      setReady(false);
     }
   }
 
@@ -109,8 +113,20 @@ export default function App() {
               </div>
             </div>
 
-            <div className="text-muted" style={{ fontSize: 12 }}>
-              selected edges: <strong>{selectedEdgeIds.length}</strong>
+            <div className="d-flex align-items-center gap-3 flex-wrap">
+              <div className="text-muted" style={{ fontSize: 12 }}>
+                selected edges: <strong>{selectedEdgeIds.length}</strong>
+              </div>
+
+              <button
+                type="button"
+                className={ready ? 'btn btn-sm btn-outline-secondary' : 'btn btn-sm btn-success'}
+                onClick={() => setReady((r) => !r)}
+                disabled={!metroGraph}
+                title={ready ? 'Hide edge selection' : 'Start selecting edges'}
+              >
+                {ready ? 'Hide edges' : 'Ready'}
+              </button>
             </div>
           </div>
 
@@ -125,40 +141,42 @@ export default function App() {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '1fr 1fr', // 50/50
+                  gridTemplateColumns: ready ? '1fr 1fr' : '1fr', // full-width map until Ready
                   gap: 16,
                   height: '75vh',
                   minHeight: 560,
                   alignItems: 'stretch',
                 }}
               >
-                {/* Left: Map */}
+                {/* Map (always visible) */}
                 <div style={{ height: '100%', overflow: 'auto', minWidth: 0 }}>
                   <TehranMetroMap graph={metroGraph} highlightEdgeIds={selectedEdgeIds} />
                 </div>
 
-                {/* Right: Edge list */}
-                <div style={{ height: '100%', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                  <div className="d-flex justify-content-between align-items-baseline mb-2">
-                    <div className="text-muted">Edges</div>
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-outline-secondary"
-                      onClick={() => setSelectedEdgeIds([])}
-                      disabled={selectedEdgeIds.length === 0}
-                    >
-                      Clear
-                    </button>
-                  </div>
+                {/* Edge selection (only when ready) */}
+                {ready && (
+                  <div style={{ height: '100%', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                    <div className="d-flex justify-content-between align-items-baseline mb-2">
+                      <div className="text-muted">Edges</div>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary"
+                        onClick={() => setSelectedEdgeIds([])}
+                        disabled={selectedEdgeIds.length === 0}
+                      >
+                        Clear
+                      </button>
+                    </div>
 
-                  <div style={{ flex: 1, minHeight: 0 }}>
-                    <MetroEdgesTable
-                      graph={metroGraph}
-                      selectedEdgeIds={selectedEdgeIds}
-                      onToggleEdge={toggleEdge}
-                    />
+                    <div style={{ flex: 1, minHeight: 0 }}>
+                      <MetroEdgesTable
+                        graph={metroGraph}
+                        selectedEdgeIds={selectedEdgeIds}
+                        onToggleEdge={toggleEdge}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </div>

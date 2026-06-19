@@ -33,4 +33,11 @@ export const API = {
   createRecord: (value) => request('POST', '/api/records', { value }),
   listRecords:  ()      => request('GET',  '/api/records'),
   getRecordsSummary: () => request('GET', '/api/records/summary'),
+
+  // Metro
+  getMetroGraph: () => request('GET', '/api/metro/graph'),
+  listMetroEdges: (line_id) => {
+    const qs = line_id ? `?line_id=${encodeURIComponent(line_id)}` : '';
+    return request('GET', `/api/metro/edges${qs}`);
+  },
 };

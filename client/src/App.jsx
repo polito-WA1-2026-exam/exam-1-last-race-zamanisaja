@@ -3,6 +3,7 @@ import { Container, Spinner, Form, Button, Alert, Table } from 'react-bootstrap'
 import AppNavbar from './components/AppNavbar.jsx';
 import LoginForm from './components/LoginForm.jsx';
 import RegisterForm from './components/RegisterForm.jsx';
+import TehranMetroMap from './components/TehranMetroMap.jsx';
 import { API } from './api.js';
 
 export default function App() {
@@ -14,6 +15,8 @@ export default function App() {
   const [submitError, setSubmitError] = useState('');
   const [records, setRecords]         = useState([]);
   const [recordsSummary, setRecordsSummary] = useState({ highScore: null, globalHighScore: null });
+  const [metroGraph, setMetroGraph] = useState(null);
+  const [metroError, setMetroError] = useState('');
 
   // On mount, check whether a session already exists (e.g. after hot-reload)
   useEffect(() => {
@@ -33,6 +36,18 @@ export default function App() {
       .then(setRecordsSummary)
       .catch(() => setRecordsSummary({ highScore: null, globalHighScore: null }));
   }, [user]);
+
+  // Load metro graph once (or you can re-load when user changes; not needed here)
+  useEffect(() => {
+    setMetroError('');
+    API.getMetroGraph()
+      .then(setMetroGraph)
+      .catch((err) => {
+        setMetroGraph(null);
+        setMetroError(err.message || 'Failed to load metro graph');
+      });
+  }, []);
+
 
   function handleLogin(loggedInUser) {
     setUser(loggedInUser);
@@ -98,7 +113,22 @@ export default function App() {
             </p>
           )}
         </div>
+        <div className="mx-auto mt-5" style={{ maxWidth: 1100 }}>
+          <div className="d-flex align-items-baseline justify-content-between gap-3 flex-wrap">
+            <h5 className="mb-2">Tehran Metro (Lines 1–4)</h5>
+            <div className="text-muted small">Schematic map — click stations later for game actions</div>
+          </div>
 
+          {metroError && <Alert variant="danger">{metroError}</Alert>}
+
+          {!metroGraph ? (
+            <div className="d-flex justify-content-center align-items-center" style={{ height: 280 }}>
+              <Spinner animation="border" />
+            </div>
+          ) : (
+            <TehranMetroMap graph={metroGraph} />
+          )}
+        </div>
         <div className="mx-auto mt-5" style={{ maxWidth: 720 }}>
           <h5 className="mb-3">Submit a number</h5>
           {submitError && <Alert variant="danger">{submitError}</Alert>}

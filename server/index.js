@@ -9,7 +9,22 @@ const bcrypt         = require('bcrypt');
 const SqliteStore    = require('connect-sqlite3')(session);
 
 const crypto = require('crypto');
-const { seed, getUserByEmail, getUserById, createUser, createRecord, listRecordsByOwner, getHighScoreByOwner, getGlobalHighScore } = require('./db');
+const { 
+  seed,
+  // Metro
+  seedMetro,
+  getMetroGraph,
+  listMetroEdges,
+  // Users
+  getUserByEmail,
+  getUserById,
+  createUser,
+  // Records
+  createRecord,
+  listRecordsByOwner,
+  getHighScoreByOwner,
+  getGlobalHighScore, 
+ } = require('./db');
 
 const PORT        = 3001;
 const CLIENT_ORIGIN = 'http://localhost:5173';  // Vite default
@@ -213,9 +228,20 @@ app.get('/api/records/summary', (req, res) => {
   res.json({ highScore, globalHighScore });
 });
 
+app.get('/api/metro/graph', (req, res) => {
+  res.json(getMetroGraph());
+});
+
+app.get('/api/metro/edges', (req, res) => {
+  const line_id = req.query.line_id;
+  res.json(listMetroEdges({ line_id }));
+});
+
+
 // ── Start ────────────────────────────────────────────────────────────────────
 seed()
   .then(() => {
+    seedMetro();
     app.listen(PORT, () =>
       console.log(`Server running on http://localhost:${PORT}`)
     );

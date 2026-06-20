@@ -54,6 +54,18 @@ function shortestDistance(graph, startId, endId) {
  * Returns null if not found within attemptLimit tries.
  */
 export function pickRandomStations(graph, minDistance = 3, attemptLimit = 200) {
+  // ✅ for testing: always return these two stations (if they exist in the graph)
+  const TEST_MODE = true; // set to false to restore randomness
+  if (TEST_MODE) {
+    if (!graph?.nodes) return null;
+
+    const start = graph.nodes.find((n) => n.id === 'shahid-haghani' && n.type === 'station');
+    const destination = graph.nodes.find((n) => n.id === 'sohrevardi' && n.type === 'station');
+
+    if (!start || !destination) return null;
+    return { start, destination };
+  }
+
   if (!graph?.nodes || !graph?.edges) return null;
 
   const stations = graph.nodes.filter((n) => n.type === 'station');

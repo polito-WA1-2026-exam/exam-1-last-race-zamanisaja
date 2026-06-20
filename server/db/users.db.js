@@ -2,6 +2,17 @@
 
 const bcrypt = require('bcrypt');
 
+function initUsersSchema(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id       TEXT PRIMARY KEY,
+      name     TEXT NOT NULL,
+      email    TEXT NOT NULL UNIQUE,
+      hash     TEXT NOT NULL
+    );
+  `);
+}
+
 async function seedUsersOnce(db) {
   const count = db.prepare('SELECT COUNT(*) as c FROM users').get().c;
   if (count > 0) {
@@ -38,6 +49,7 @@ function createUser(db, { id, name, email, hash }) {
 }
 
 module.exports = {
+  initUsersSchema,
   seedUsersOnce,
   getUserByEmail,
   getUserById,

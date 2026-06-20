@@ -1,5 +1,17 @@
 'use strict';
 
+function initRecordsSchema(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS records (
+      record_id  INTEGER PRIMARY KEY AUTOINCREMENT,
+      owner_type TEXT NOT NULL CHECK(owner_type IN ('user','guest')),
+      owner_id   TEXT NOT NULL,
+      value      REAL NOT NULL,
+      ts         TEXT NOT NULL
+    );
+  `);
+}
+
 function createRecord(db, { owner_type, owner_id, value, ts }) {
   const stmt = db.prepare('INSERT INTO records (owner_type, owner_id, value, ts) VALUES (?, ?, ?, ?)');
   const info = stmt.run(owner_type, owner_id, value, ts);
@@ -30,6 +42,7 @@ function getGlobalHighScore(db) {
 }
 
 module.exports = {
+  initRecordsSchema,
   createRecord,
   listRecordsByOwner,
   getHighScoreByOwner,

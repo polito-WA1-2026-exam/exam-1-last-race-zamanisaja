@@ -22,6 +22,7 @@ export default function App() {
   const [ready, setReady] = useState(false);
 
   const [lang, setLang] = useState('fa'); // 'fa' | 'en'
+  const [timeLeft, setTimeLeft] = useState(10);
 
   function toggleEdge(edgeId) {
     setSelectedEdgeIds((prev) => {
@@ -58,6 +59,27 @@ export default function App() {
       });
   }, []);
 
+  // 10-second countdown while ready
+  useEffect(() => {
+    if (!ready) {
+      setTimeLeft(10);
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervalId);
+          setReady(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [ready]);
+
   function handleLogin(loggedInUser) {
     setUser(loggedInUser);
     setAuthView('none');
@@ -75,6 +97,7 @@ export default function App() {
       setUser(null);
       setSelectedEdgeIds([]);
       setReady(false);
+      setTimeLeft(10);
     }
   }
 
@@ -95,7 +118,7 @@ export default function App() {
         onLogin={handleLogin}
         onRegister={handleRegister}
         lang={lang}
-        onToggleLang={() => setLang(l => (l === 'en' ? 'fa' : 'en'))}
+        onToggleLang={() => setLang((l) => (l === 'en' ? 'fa' : 'en'))}
       />
 
       <Container fluid className="py-4">
@@ -121,6 +144,10 @@ export default function App() {
                 selected edges: <strong>{selectedEdgeIds.length}</strong>
               </div>
 
+              <div className="text-muted" style={{ fontSize: 12 }}>
+                time left: <strong>{ready ? `${timeLeft}s` : '-'}</strong>
+              </div>
+
               <button
                 type="button"
                 className={ready ? 'btn btn-sm btn-outline-secondary' : 'btn btn-sm btn-success'}
@@ -144,29 +171,27 @@ export default function App() {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: ready ? '1fr 1fr' : '1fr', // full-width map until Ready
+                  gridTemplateColumns: ready ? '1fr 1fr' : '1fr',
                   gap: 16,
                   height: '75vh',
                   minHeight: 560,
                   alignItems: 'stretch',
                 }}
               >
-                {/* Map (always visible) */}
                 <div style={{ height: '100%', overflow: 'auto', minWidth: 0 }}>
                   <TehranMetroMap
                     graph={metroGraph}
-                    playMode={ready}   // not ready: edges ON, ready: edges OFF
+                    playMode={ready}
                     lang={lang}
                   />
                 </div>
 
-                {/* Edge selection (only when ready) */}
                 {ready && (
                   <div
                     style={{
                       height: '100%',
                       minWidth: 0,
-                      overflow: 'hidden',              // important: keeps header + table aligned
+                      overflow: 'hidden',
                       border: '1px solid rgba(0,0,0,0.08)',
                       borderRadius: 12,
                       background: '#fff',
@@ -174,7 +199,6 @@ export default function App() {
                       flexDirection: 'column',
                     }}
                   >
-                    {/* Header sits INSIDE the panel, so the table can begin immediately below it */}
                     <div
                       style={{
                         padding: '10px 12px',
@@ -200,7 +224,6 @@ export default function App() {
                       </button>
                     </div>
 
-                    {/* Table gets the rest of the height and scrolls */}
                     <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
                       <MetroEdgesTable
                         graph={metroGraph}

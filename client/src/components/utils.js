@@ -231,3 +231,44 @@ export function validateRoute(graph, selectedEdgeIds, startStationId, destinatio
 
   return { ok: true, routeEdgeIds, routeNodeIds };
 }
+
+
+export const BASE_SCORE = 20;
+
+export function pickRandomEvent(events) {
+  if (!Array.isArray(events) || events.length === 0) {
+    throw new Error('events list is empty');
+  }
+  return events[Math.floor(Math.random() * events.length)];
+}
+
+/**
+ * Assign one random event to each edgeId.
+ * Returns: [{ edgeId, eventCode, eventScore }]
+ */
+export function assignEventsToEdges(edgeIds, events) {
+  if (!Array.isArray(edgeIds)) throw new Error('edgeIds must be an array');
+
+  return edgeIds.map((edgeId) => {
+    const ev = pickRandomEvent(events);
+    return {
+      edgeId,
+      eventCode: ev.code,
+      eventScore: ev.score,
+    };
+  });
+}
+
+export function calculateGameScore(assignments, baseScore = BASE_SCORE) {
+  const delta = (assignments || []).reduce((sum, a) => sum + (a.eventScore ?? 0), 0);
+  return baseScore + delta;
+}
+
+/**
+ * Convenience: given edgeIds + events, produce full result.
+ */
+export function simulateEdgeEventsAndScore(edgeIds, events, baseScore = BASE_SCORE) {
+  const assignments = assignEventsToEdges(edgeIds, events);
+  const finalScore = calculateGameScore(assignments, baseScore);
+  return { baseScore, finalScore, assignments };
+}

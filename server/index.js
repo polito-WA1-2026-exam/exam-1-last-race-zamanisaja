@@ -12,18 +12,28 @@ const crypto = require('crypto');
 const {
   initReferenceData,
   seedUsersOnce,
+
   // Metro
   getMetroGraph,
   listMetroEdges,
+
   // Users
   getUserByEmail,
   getUserById,
   createUser,
+
   // Records
   createRecord,
   listRecordsByOwner,
   getHighScoreByOwner,
   getGlobalHighScore,
+
+  // Events
+  listEvents,
+
+  // Games
+  createGame,
+  listGamesByOwner,
  } = require('./db');
 
 const PORT        = 3001;
@@ -235,6 +245,49 @@ app.get('/api/metro/graph', (req, res) => {
 app.get('/api/metro/edges', (req, res) => {
   const line_id = req.query.line_id;
   res.json(listMetroEdges({ line_id }));
+});
+
+// GET /api/events -> list the 9 events (active only)
+app.get('/api/events', (req, res) => {
+  res.json(listEvents({ activeOnly: true }));
+});
+
+// POST /api/games -> save one game result (final score only)
+app.post('/api/games', (req, res) => {
+  const { owner_type, owner_id } = getOwner(req, res);
+  const { score } = req.body ?? {};
+
+  const num = Number(score);
+  if (!Number.isFinite(num)) {
+    return res.status(422).json({ error: 'Score must be a finite number.' });
+  }
+
+  // If you want integer scores only:
+  const intScore = Math.trunc(num);
+
+  const game_id = crypto.randomUUID();
+
+  try {
+    createGame({ game_id, owner_type, owner_id, score: intScore });
+    return res.status(201).json({ game_id, owner_type, owner_id, score: intScore });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Could not save game.' });
+  }
+});
+
+// GET /api/games -> list games for current owner (user or guest)
+app.get('/api/games', (req, res) => {
+  const { owner_type, owner_id } = getOwner(req, res);
+  const limit = req.query.limit ? Math.max(1, Math.min(200, Number(req.query.limit))) : 50;
+
+  try {
+    const rows = listGamesByOwner(owner_type, owner_id, { limit });
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Could not list games.' });
+  }
 });
 
 

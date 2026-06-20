@@ -6,6 +6,7 @@ const usersDb = require('./db/users.db');
 const recordsDb = require('./db/records.db');
 const metroDb = require('./db/metro.db');
 const eventsDb = require('./db/events.db');
+const gameDb = require('./db/game.db');
 
 // Seeds / static datasets
 const metroSeed = require('./db/tehran.l1-l4.seed');
@@ -61,4 +62,9 @@ module.exports = {
   getEventByCode: (code) => eventsDb.getEventByCode(db, code),
   createRoundEvent: (data) => eventsDb.createRoundEvent(db, data),
   listRoundEvents: (opts) => eventsDb.listRoundEvents(db, opts),
+
+  // Games (export when you’re ready to use it)
+  createGame: (data) => gameDb.createGame(db, data),
+  getGameById: (game_id) => gameDb.getGameById(db, game_id),
+  listGamesByOwner: (owner_type, owner_id, opts) => gameDb.listGamesByOwner(db, owner_type, owner_id, opts),
 };

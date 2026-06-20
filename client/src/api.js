@@ -40,4 +40,15 @@ export const API = {
     const qs = line_id ? `?line_id=${encodeURIComponent(line_id)}` : '';
     return request('GET', `/api/metro/edges${qs}`);
   },
+
+  // Events
+  listEvents: () => request('GET', '/api/events'),
+
+  // Games
+  createGame: (score) => request('POST', '/api/games', { score }),
+  listGames: (limit) => {
+    const qs = limit ? `?limit=${encodeURIComponent(limit)}` : '';
+    return request('GET', `/api/games${qs}`);
+  },
+
 };

@@ -1,13 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Container, Spinner, Alert } from 'react-bootstrap';
 import AppNavbar from './components/AppNavbar.jsx';
-import LoginForm from './components/LoginForm.jsx';
-import RegisterForm from './components/RegisterForm.jsx';
 import TehranMetroMap from './components/TehranMetroMap.jsx';
 import MetroEdgesTable from './components/MetroEdgesTable.jsx';
-import { pickRandomStations, getStationLabel } from './components/utils.js';
-
-
+import { pickRandomStations, getStationLabel, validateSelectedEdges } from './components/utils.js';
 import { API } from './api.js';
 
 export default function App() {
@@ -19,21 +15,33 @@ export default function App() {
   const [metroGraph, setMetroGraph] = useState(null);
   const [metroError, setMetroError] = useState('');
 
-  const [selectedEdgeIds, setSelectedEdgeIds] = useState([]);
+  const [selectedEdgeIds, setSelectedEdgeIds] = useState([]);     // live selection (play)
+  const [submittedEdgeIds, setSubmittedEdgeIds] = useState([]);   // frozen selection (validation)
 
-  // Layout state: false = map-only, true = split view (map + edges)
-  const [ready, setReady] = useState(false);
-
-  // Map mode: 'normal' | 'play' | 'validation'
+  // 'normal' | 'play' | 'validation'
   const [mode, setMode] = useState('normal');
 
-  const [lang, setLang] = useState('fa'); // 'fa' | 'en'
+  const [lang, setLang] = useState('fa');
   const [timeLeft, setTimeLeft] = useState(10);
 
   const [startStation, setStartStation] = useState(null);
   const [destinationStation, setDestinationStation] = useState(null);
 
+  const [validationResult, setValidationResult] = useState(null);
+
+  const showSplit = mode === 'play'; // restore 50/50 only in play mode
+
+  const highlightedNodeIds = useMemo(
+    () => [startStation?.id, destinationStation?.id].filter(Boolean),
+    [startStation, destinationStation]
+  );
+
+  // Map should see submitted edges in validation, live edges in play (normal shows all anyway)
+  const visibleEdgeIds = mode === 'validation' ? submittedEdgeIds : selectedEdgeIds;
+
   function toggleEdge(edgeId) {
+    if (mode !== 'play') return;
+
     setSelectedEdgeIds((prev) => {
       const s = new Set(prev);
       if (s.has(edgeId)) s.delete(edgeId);
@@ -47,37 +55,58 @@ export default function App() {
 
     const pair = pickRandomStations(metroGraph, 3);
     if (!pair) {
-      setMetroError('Could not find two stations at least 3 stops apart.');
+      setMetroError('Could not find two stations at least 3 stations apart.');
       return;
     }
 
     setMetroError('');
+    setValidationResult(null);
+
     setSelectedEdgeIds([]);
+    setSubmittedEdgeIds([]);
+
     setStartStation(pair.start);
     setDestinationStation(pair.destination);
+
     setTimeLeft(10);
-    setReady(true);
     setMode('play');
   }
 
   function enterNormalMode() {
-    setReady(false);
+    setMode('normal');
+    setTimeLeft(10);
+
     setSelectedEdgeIds([]);
+    setSubmittedEdgeIds([]);
+
     setStartStation(null);
     setDestinationStation(null);
-    setMode('normal');
+
+    setValidationResult(null);
+    setMetroError('');
   }
 
-  function enterValidateMode() {
-    setReady(false);
+  const enterValidateMode = useCallback(() => {
+    if (!metroGraph) return;
+
+    // Snapshot BEFORE clearing (requirement: table becomes unselected in validation)
+    const snapshot = selectedEdgeIds;
+
+    setSubmittedEdgeIds(snapshot);
+    setSelectedEdgeIds([]);
+
+    const result = validateSelectedEdges(
+      metroGraph,
+      snapshot,
+      startStation?.id,
+      destinationStation?.id
+    );
+    setValidationResult(result);
+
     setMode('validation');
-  }
+  }, [metroGraph, selectedEdgeIds, startStation?.id, destinationStation?.id]);
 
-  function backToPlayMode() {
-    if (!ready) return;
-    setMode('play');
-  }
-
+  // Session restore
   useEffect(() => {
     API.getSession()
       .then(setUser)
@@ -85,12 +114,14 @@ export default function App() {
       .finally(() => setChecking(false));
   }, []);
 
+  // Navbar summary
   useEffect(() => {
     API.getRecordsSummary()
       .then(setRecordsSummary)
       .catch(() => setRecordsSummary({ highScore: null, globalHighScore: null }));
   }, [user]);
 
+  // Load metro graph
   useEffect(() => {
     setMetroError('');
     API.getMetroGraph()
@@ -101,15 +132,16 @@ export default function App() {
       });
   }, []);
 
-  // Countdown runs only in play mode
+  // Countdown: only in play mode; at 0 -> auto validation
   useEffect(() => {
-    if (!ready || mode !== 'play') return;
+    if (mode !== 'play') return;
 
     const intervalId = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(intervalId);
-          setMode('validation');
+          // Auto-validate when time expires
+          enterValidateMode();
           return 0;
         }
         return prev - 1;
@@ -117,15 +149,7 @@ export default function App() {
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [ready, mode]);
-
-  function handleLogin(loggedInUser) {
-    setUser(loggedInUser);
-  }
-
-  function handleRegister(registeredUser) {
-    setUser(registeredUser);
-  }
+  }, [mode, enterValidateMode]);
 
   async function handleLogout() {
     try {
@@ -135,8 +159,6 @@ export default function App() {
       enterNormalMode();
     }
   }
-
-  const highlightedNodeIds = [startStation?.id, destinationStation?.id].filter(Boolean);
 
   const primaryButton = (() => {
     if (!metroGraph) {
@@ -165,7 +187,7 @@ export default function App() {
         className: 'btn btn-sm btn-primary',
         onClick: enterValidateMode,
         disabled: selectedEdgeIds.length === 0,
-        title: 'Show only the selected edges on the map',
+        title: 'Validate your route',
       };
     }
 
@@ -192,8 +214,8 @@ export default function App() {
         user={user}
         summary={recordsSummary}
         onLogout={handleLogout}
-        onLogin={handleLogin}
-        onRegister={handleRegister}
+        onLogin={setUser}
+        onRegister={setUser}
         lang={lang}
         onToggleLang={() => setLang((l) => (l === 'en' ? 'fa' : 'en'))}
       />
@@ -203,6 +225,7 @@ export default function App() {
           <div className="d-flex justify-content-between align-items-baseline flex-wrap gap-2 mt-2">
             <div>
               <h1 className="h3 mb-1">Tehran Metro</h1>
+
               <div className="text-muted">
                 {user ? (
                   <>
@@ -217,17 +240,17 @@ export default function App() {
 
               <div className="text-muted mt-2" style={{ fontSize: 14 }}>
                 <div>
-                  Start: <strong>{getStationLabel(startStation)}</strong>
+                  Start: <strong>{getStationLabel(startStation, lang)}</strong>
                 </div>
                 <div>
-                  Destination: <strong>{getStationLabel(destinationStation)}</strong>
+                  Destination: <strong>{getStationLabel(destinationStation, lang)}</strong>
                 </div>
               </div>
             </div>
 
             <div className="d-flex align-items-center gap-3 flex-wrap">
               <div className="text-muted" style={{ fontSize: 12 }}>
-                selected edges: <strong>{selectedEdgeIds.length}</strong>
+                selected edges: <strong>{visibleEdgeIds.length}</strong>
               </div>
 
               <div className="text-muted" style={{ fontSize: 12 }}>
@@ -249,32 +272,48 @@ export default function App() {
           <div className="mt-3">
             {metroError && <Alert variant="danger">{metroError}</Alert>}
 
+            {mode === 'validation' && validationResult && (
+              <Alert variant={validationResult.ok ? 'success' : 'danger'} className="mb-3">
+                <strong>{validationResult.ok ? 'Correct!' : 'Not valid'}</strong>
+                <div style={{ fontSize: 13, opacity: 0.9 }}>
+                  {validationResult.ok
+                    ? 'Your selected edges form a connected route from start to destination.'
+                    : validationResult.reason}
+                </div>
+              </Alert>
+            )}
+
             {!metroGraph ? (
-              <div className="d-flex justify-content-center align-items-center" style={{ height: '60vh', minHeight: 520 }}>
+              <div
+                className="d-flex justify-content-center align-items-center"
+                style={{ height: '60vh', minHeight: 520 }}
+              >
                 <Spinner animation="border" />
               </div>
             ) : (
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: ready ? '1fr 1fr' : '1fr',
+                  gridTemplateColumns: showSplit ? '1fr 1fr' : '1fr',
                   gap: 16,
                   height: '75vh',
                   minHeight: 560,
                   alignItems: 'stretch',
                 }}
               >
+                {/* Map */}
                 <div style={{ height: '100%', overflow: 'auto', minWidth: 0 }}>
                   <TehranMetroMap
                     graph={metroGraph}
                     mode={mode}
                     lang={lang}
                     highlightedNodeIds={highlightedNodeIds}
-                    selectedEdgeIds={selectedEdgeIds}
+                    selectedEdgeIds={visibleEdgeIds}
                   />
                 </div>
 
-                {ready && (
+                {/* Right panel ONLY in play mode (50/50 restored) */}
+                {showSplit && (
                   <div
                     style={{
                       height: '100%',
@@ -300,30 +339,16 @@ export default function App() {
                         background: '#fff',
                       }}
                     >
-                      <div style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>
-                        {mode === 'validation' ? 'Selected edges' : 'Edges'}
-                      </div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>Edges</div>
 
-                      <div className="d-flex gap-2">
-                        {mode === 'validation' && (
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={backToPlayMode}
-                          >
-                            Back to play
-                          </button>
-                        )}
-
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-secondary"
-                          onClick={() => setSelectedEdgeIds([])}
-                          disabled={selectedEdgeIds.length === 0}
-                        >
-                          Clear
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary"
+                        onClick={() => setSelectedEdgeIds([])}
+                        disabled={selectedEdgeIds.length === 0}
+                      >
+                        Clear
+                      </button>
                     </div>
 
                     <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>

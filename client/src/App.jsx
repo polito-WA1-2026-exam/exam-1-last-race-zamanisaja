@@ -9,7 +9,6 @@ import { API } from './api.js';
 
 export default function App() {
   const [user, setUser] = useState(null); // null = not logged in
-  const [authView, setAuthView] = useState('none'); // 'none' | 'login' | 'register'
   const [checking, setChecking] = useState(true); // true while restoring session
 
   const [recordsSummary, setRecordsSummary] = useState({ highScore: null, globalHighScore: null });
@@ -93,8 +92,8 @@ export default function App() {
         user={user}
         summary={recordsSummary}
         onLogout={handleLogout}
-        onShowLogin={() => setAuthView('login')}
-        onShowRegister={() => setAuthView('register')}
+        onLogin={handleLogin}
+        onRegister={handleRegister}
         lang={lang}
         onToggleLang={() => setLang(l => (l === 'en' ? 'fa' : 'en'))}
       />
@@ -189,12 +188,6 @@ export default function App() {
               </div>
             )}
           </div>
-
-          {!user && authView === 'login' ? (
-            <LoginForm onLogin={handleLogin} />
-          ) : !user && authView === 'register' ? (
-            <RegisterForm onRegister={handleRegister} />
-          ) : null}
         </div>
       </Container>
     </>

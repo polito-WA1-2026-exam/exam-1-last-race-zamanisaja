@@ -1,14 +1,52 @@
-import { Navbar, Nav, Container, Button } from 'react-bootstrap';
+import { useState } from 'react';
+import { Navbar, Nav, Container, Button, OverlayTrigger, Popover, ButtonGroup } from 'react-bootstrap';
+import LoginForm from './LoginForm.jsx';
+import RegisterForm from './RegisterForm.jsx';
 
 export default function AppNavbar({
   user,
   summary,
   onLogout,
-  onShowLogin,
-  onShowRegister,
+  onLogin,
+  onRegister,
   lang,
   onToggleLang,
 }) {
+  const [authTab, setAuthTab] = useState('login'); // 'login' | 'register'
+
+  const authPopover = (
+    <Popover id="auth-popover">
+      <Popover.Header
+        as="div"
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+      >
+        <div style={{ fontWeight: 600 }}>Account</div>
+        <ButtonGroup size="sm">
+          <Button
+            variant={authTab === 'login' ? 'primary' : 'outline-primary'}
+            onClick={() => setAuthTab('login')}
+          >
+            Login
+          </Button>
+          <Button
+            variant={authTab === 'register' ? 'primary' : 'outline-primary'}
+            onClick={() => setAuthTab('register')}
+          >
+            Register
+          </Button>
+        </ButtonGroup>
+      </Popover.Header>
+
+      <Popover.Body style={{ width: 340 }}>
+        {authTab === 'login' ? (
+          <LoginForm onLogin={onLogin} compact />
+        ) : (
+          <RegisterForm onRegister={onRegister} compact />
+        )}
+      </Popover.Body>
+    </Popover>
+  );
+
   return (
     <Navbar bg="dark" variant="dark" expand="lg" sticky="top">
       <Container>
@@ -27,8 +65,7 @@ export default function AppNavbar({
             onClick={onToggleLang}
             className="me-3"
             style={{
-              fontFamily:
-                '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",system-ui',
+              fontFamily: '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",system-ui',
               fontSize: 16,
               lineHeight: 1,
             }}
@@ -37,7 +74,7 @@ export default function AppNavbar({
           >
             {lang === 'fa' ? '🇮🇷' : 'US'}
           </Button>
-          
+
           {user ? (
             <>
               <Navbar.Text className="me-3">
@@ -48,14 +85,12 @@ export default function AppNavbar({
               </Button>
             </>
           ) : (
-            <div className="d-flex gap-2">
-              <Button variant="outline-light" size="sm" onClick={onShowLogin}>
+            // ✅ Step E: one button that opens the popover
+            <OverlayTrigger trigger="click" placement="bottom-end" overlay={authPopover} rootClose>
+              <Button variant="outline-light" size="sm">
                 Login
               </Button>
-              <Button variant="light" size="sm" onClick={onShowRegister}>
-                Register
-              </Button>
-            </div>
+            </OverlayTrigger>
           )}
         </Nav>
       </Container>

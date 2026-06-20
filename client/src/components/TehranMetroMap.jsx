@@ -10,7 +10,7 @@ import { useMemo } from 'react';
  * - onSelectNode?: (node) => void
  * - mode?: 'normal' | 'play' | 'validation'
  * - highlightedNodeIds?: string[]
- * - selectedEdgeIds?: string[]
+ * - selectedEdgeIds?: string[]   // IMPORTANT: in validation mode, App should pass SUBMITTED ids here
  * - lang?: 'fa' | 'en'
  */
 
@@ -121,21 +121,24 @@ export default function TehranMetroMap({
     return { lineById, edgesWithPoints: edges, bounds };
   }, [graph]);
 
+  // What edges to show
   const visibleEdges = useMemo(() => {
     if (isNormalMode) return edgesWithPoints;
-    if (isPlayMode) return [];
-    if (isValidationMode) {
-      return edgesWithPoints.filter((e) => selectedEdgeIds.includes(e.id));
-    }
+    if (isPlayMode) return []; // hide all lines during selection phase (your original intent)
+    if (isValidationMode) return edgesWithPoints.filter((e) => selectedEdgeIds.includes(e.id));
     return edgesWithPoints;
   }, [edgesWithPoints, isNormalMode, isPlayMode, isValidationMode, selectedEdgeIds]);
 
+  // What nodes to show
   const visibleNodes = useMemo(() => {
-    // commenting out, because even in play mode, we want to show all nodes
-    // if (isPlayMode) {
-    //   return (graph?.nodes ?? []).filter((n) => highlightedNodeIds.includes(n.id));
-    // }
-    return graph?.nodes ?? [];
+    const nodes = graph?.nodes ?? [];
+
+    // In play mode, show ONLY start + destination (matches your hint text).
+    // if (isPlayMode) return nodes.filter((n) => highlightedNodeIds.includes(n.id));
+
+    // In validation mode, show all nodes so the selected edges have context.
+    // (If you prefer: filter to endpoints of selected edges.)
+    return nodes;
   }, [graph, isPlayMode, highlightedNodeIds]);
 
   const baseStroke = 10;
@@ -241,8 +244,7 @@ export default function TehranMetroMap({
       <div style={styles.hint}>
         {isNormalMode && (isFa ? 'همه ایستگاه‌ها و خطوط نمایش داده می‌شوند.' : 'All stations and lines are shown.')}
         {isPlayMode && (isFa ? 'فقط مبدا و مقصد نمایش داده می‌شوند.' : 'Only source and destination stations are shown.')}
-        {isValidationMode &&
-          (isFa ? 'فقط مسیرهای انتخاب‌شده نمایش داده می‌شوند.' : 'Only the user-selected edges are shown.')}
+        {isValidationMode && (isFa ? 'فقط مسیرهای انتخاب‌شده نمایش داده می‌شوند.' : 'Only the user-selected edges are shown.')}
       </div>
     </div>
   );

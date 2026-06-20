@@ -1,6 +1,14 @@
 import { Navbar, Nav, Container, Button } from 'react-bootstrap';
 
-export default function AppNavbar({ user, summary, onLogout, onShowLogin, onShowRegister }) {
+export default function AppNavbar({
+  user,
+  summary,
+  onLogout,
+  onShowLogin,
+  onShowRegister,
+  lang,
+  onToggleLang,
+}) {
   return (
     <Navbar bg="dark" variant="dark" expand="lg" sticky="top">
       <Container>
@@ -11,6 +19,25 @@ export default function AppNavbar({ user, summary, onLogout, onShowLogin, onShow
             High score: <strong>{summary?.highScore ?? '—'}</strong>
             <span className="ms-2 text-secondary">(Global: {summary?.globalHighScore ?? '—'})</span>
           </Navbar.Text>
+
+          {/* Language toggle: always visible */}
+          <Button
+            variant="outline-light"
+            size="sm"
+            onClick={onToggleLang}
+            className="me-3"
+            style={{
+              fontFamily:
+                '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",system-ui',
+              fontSize: 16,
+              lineHeight: 1,
+            }}
+            aria-label="Toggle language"
+            title={lang === 'fa' ? 'زبان: فارسی' : 'Language: English'}
+          >
+            {lang === 'fa' ? '🇮🇷' : 'US'}
+          </Button>
+          
           {user ? (
             <>
               <Navbar.Text className="me-3">

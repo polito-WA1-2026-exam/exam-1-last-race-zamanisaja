@@ -6,6 +6,7 @@ const Database = require('better-sqlite3');
 const DB_FILE = './db.sqlite';
 const db = new Database(DB_FILE);
 
+// Make sure this path matches your project structure
 const metroSeed = require('./metro/tehran.l1-l4.seed');
 
 // ── Schema ──────────────────────────────────────────────────────────────────
@@ -19,7 +20,7 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS records (
     record_id  INTEGER PRIMARY KEY AUTOINCREMENT,
-    owner_type TEXT NOT NULL CHECK(owner_type IN ('user','guest')) ,
+    owner_type TEXT NOT NULL CHECK(owner_type IN ('user','guest')),
     owner_id   TEXT NOT NULL,
     value      REAL NOT NULL,
     ts         TEXT NOT NULL
@@ -28,6 +29,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS metro_line (
     id         TEXT PRIMARY KEY,
     name_en    TEXT NOT NULL,
+    name_fa    TEXT NOT NULL,
     color_hex  TEXT NOT NULL,
     sort_order INTEGER NOT NULL DEFAULT 0
   );
@@ -60,12 +62,26 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_metro_edge_to   ON metro_edge(to_node_id);
 `);
 
-// ── Seed ────────────────────────────────────────────────────────────────────
-// Only insert if the table is empty, so re-running is idempotent.
+// ── Migrations (for existing db.sqlite files) ────────────────────────────────
+// CREATE TABLE IF NOT EXISTS does NOT add new columns, so we patch old DBs here.
+try {
+  db.exec(`ALTER TABLE metro_line ADD COLUMN name_fa TEXT NOT NULL DEFAULT ''`);
+} catch (e) {
+  // ignore "duplicate column name: name_fa"
+}
+
+// If you had metro_line rows before adding name_fa, ensure it's not empty.
+try {
+  db.prepare(`UPDATE metro_line SET name_fa = name_en WHERE name_fa = ''`).run();
+} catch (e) {
+  // ignore if table/column not ready for some reason
+}
+
+// ── Seed Users (only once) ──────────────────────────────────────────────────
 async function seed() {
   const count = db.prepare('SELECT COUNT(*) as c FROM users').get().c;
   if (count > 0) {
-    console.log('DB already seeded, skipping.');
+    console.log('DB already seeded (users), skipping user seed.');
     return;
   }
 
@@ -86,7 +102,7 @@ async function seed() {
   }
 }
 
-// ── DAO ─────────────────────────────────────────────────────────────────────
+// ── DAO: Users ──────────────────────────────────────────────────────────────
 function getUserByEmail(email) {
   return db.prepare('SELECT * FROM users WHERE email = ?').get(email);
 }
@@ -100,18 +116,28 @@ function createUser({ id, name, email, hash }) {
   return stmt.run(id, name, email, hash);
 }
 
+// ── DAO: Records ────────────────────────────────────────────────────────────
 function createRecord({ owner_type, owner_id, value, ts }) {
-  const stmt = db.prepare('INSERT INTO records (owner_type, owner_id, value, ts) VALUES (?, ?, ?, ?)');
+  const stmt = db.prepare(
+    'INSERT INTO records (owner_type, owner_id, value, ts) VALUES (?, ?, ?, ?)'
+  );
   const info = stmt.run(owner_type, owner_id, value, ts);
   return info.lastInsertRowid;
 }
 
 function listRecordsByOwner(owner_type, owner_id) {
-  return db.prepare('SELECT record_id, owner_type, owner_id, value, ts FROM records WHERE owner_type = ? AND owner_id = ? ORDER BY record_id DESC').all(owner_type, owner_id);
+  return db.prepare(
+    `SELECT record_id, owner_type, owner_id, value, ts
+     FROM records
+     WHERE owner_type = ? AND owner_id = ?
+     ORDER BY record_id DESC`
+  ).all(owner_type, owner_id);
 }
 
 function getHighScoreByOwner(owner_type, owner_id) {
-  const row = db.prepare('SELECT MAX(value) AS highScore FROM records WHERE owner_type = ? AND owner_id = ?').get(owner_type, owner_id);
+  const row = db.prepare(
+    'SELECT MAX(value) AS highScore FROM records WHERE owner_type = ? AND owner_id = ?'
+  ).get(owner_type, owner_id);
   return row.highScore;
 }
 
@@ -120,6 +146,7 @@ function getGlobalHighScore() {
   return row.highScore;
 }
 
+// ── Metro helpers ───────────────────────────────────────────────────────────
 function canonicalEdge(a, b) {
   return a < b ? [a, b] : [b, a];
 }
@@ -132,10 +159,11 @@ function canonicalEdge(a, b) {
 function seedMetro() {
   const tx = db.transaction(() => {
     const upsertLine = db.prepare(`
-      INSERT INTO metro_line (id, name_en, color_hex, sort_order)
-      VALUES (@id, @name_en, @color_hex, @sort_order)
+      INSERT INTO metro_line (id, name_en, name_fa, color_hex, sort_order)
+      VALUES (@id, @name_en, @name_fa, @color_hex, @sort_order)
       ON CONFLICT(id) DO UPDATE SET
         name_en=excluded.name_en,
+        name_fa=excluded.name_fa,
         color_hex=excluded.color_hex,
         sort_order=excluded.sort_order;
     `);
@@ -172,9 +200,10 @@ function seedMetro() {
   tx();
 }
 
+// ── Metro DAO ───────────────────────────────────────────────────────────────
 function getMetroGraph() {
   const lines = db.prepare(
-    'SELECT id, name_en, color_hex, sort_order FROM metro_line ORDER BY sort_order'
+    'SELECT id, name_en, name_fa, color_hex, sort_order FROM metro_line ORDER BY sort_order'
   ).all();
 
   const nodes = db.prepare(
@@ -182,7 +211,9 @@ function getMetroGraph() {
   ).all();
 
   const edges = db.prepare(
-    'SELECT id, from_node_id, to_node_id, line_id, sort_order FROM metro_edge ORDER BY line_id, sort_order, id'
+    `SELECT id, from_node_id, to_node_id, line_id, sort_order
+     FROM metro_edge
+     ORDER BY line_id, sort_order, id`
   ).all();
 
   return { lines, nodes, edges };
@@ -191,25 +222,34 @@ function getMetroGraph() {
 function listMetroEdges({ line_id } = {}) {
   if (line_id) {
     return db.prepare(
-      'SELECT id, from_node_id, to_node_id, line_id, sort_order FROM metro_edge WHERE line_id = ? ORDER BY sort_order, id'
+      `SELECT id, from_node_id, to_node_id, line_id, sort_order
+       FROM metro_edge
+       WHERE line_id = ?
+       ORDER BY sort_order, id`
     ).all(line_id);
   }
+
   return db.prepare(
-    'SELECT id, from_node_id, to_node_id, line_id, sort_order FROM metro_edge ORDER BY line_id, sort_order, id'
+    `SELECT id, from_node_id, to_node_id, line_id, sort_order
+     FROM metro_edge
+     ORDER BY line_id, sort_order, id`
   ).all();
 }
 
-
-module.exports = { 
+module.exports = {
+  // Seed
   seed,
+
   // Metro
   seedMetro,
   getMetroGraph,
   listMetroEdges,
+
   // Users
   getUserByEmail,
   getUserById,
   createUser,
+
   // Records
   createRecord,
   listRecordsByOwner,

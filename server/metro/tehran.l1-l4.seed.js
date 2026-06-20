@@ -1,10 +1,10 @@
 'use strict';
 
 const LINES = [
-  { id: 'L1', name_en: 'Line 1', color_hex: '#E31E24', sort_order: 1 }, // red
-  { id: 'L2', name_en: 'Line 2', color_hex: '#233B8E', sort_order: 2 }, // dark blue
-  { id: 'L3', name_en: 'Line 3', color_hex: '#00AEEF', sort_order: 3 }, // cyan
-  { id: 'L4', name_en: 'Line 4', color_hex: '#F7D000', sort_order: 4 }, // yellow
+  { id: 'L1', name_en: 'Line 1', name_fa: 'خط 1', color_hex: '#E31E24', sort_order: 1 }, // red
+  { id: 'L2', name_en: 'Line 2', name_fa: 'خط 2', color_hex: '#233B8E', sort_order: 2 }, // dark blue
+  { id: 'L3', name_en: 'Line 3', name_fa: 'خط 3', color_hex: '#00AEEF', sort_order: 3 }, // cyan
+  { id: 'L4', name_en: 'Line 4', name_fa: 'خط 4', color_hex: '#F7D000', sort_order: 4 }, // yellow
 ];
 
 // Helper for quick node creation

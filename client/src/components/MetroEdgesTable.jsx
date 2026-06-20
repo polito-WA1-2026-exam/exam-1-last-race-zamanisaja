@@ -1,17 +1,14 @@
 import { useMemo } from 'react';
 import { Table, Form, Badge } from 'react-bootstrap';
 
-export default function MetroEdgesTable({
-  graph,
-  selectedEdgeIds,
-  onToggleEdge,
-}) {
+export default function MetroEdgesTable({ graph, selectedEdgeIds, onToggleEdge, lang = 'fa' }) {
   const nodeNameById = useMemo(() => {
     const m = new Map();
-    for (const n of graph?.nodes ?? []) m.set(n.id, n.name_en);
+    for (const n of graph?.nodes ?? []) m.set(n.id, lang === 'fa' ? n.name_fa : n.name_en);
     return m;
-  }, [graph]);
+  }, [graph, lang]);
 
+  // Keep full line objects here
   const lineById = useMemo(() => {
     const m = new Map();
     for (const l of graph?.lines ?? []) m.set(l.id, l);
@@ -31,6 +28,8 @@ export default function MetroEdgesTable({
     });
     return es;
   }, [graph]);
+
+  const lineLabel = (l) => (lang === 'fa' ? (l?.name_fa ?? l?.name_en ?? '') : (l?.name_en ?? ''));
 
   return (
     <div style={{ height: '100%', overflow: 'auto', border: '1px solid rgba(0,0,0,.12)', borderRadius: 12 }}>
@@ -65,7 +64,7 @@ export default function MetroEdgesTable({
                   </td>
                   <td>
                     <Badge bg="light" text="dark" style={{ border: `2px solid ${color}` }}>
-                      {e.line_id}
+                      {lineLabel(line) || e.line_id}
                     </Badge>
                   </td>
                   <td>

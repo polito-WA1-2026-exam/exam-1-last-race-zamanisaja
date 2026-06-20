@@ -70,7 +70,11 @@ const LABELS = {
 
 const DEFAULT_LABEL = { dx: 12, dy: 0, anchor: 'start', baseline: 'middle' };
 
-export default function TehranMetroMap({ graph, onSelectNode, playMode = false }) {
+export default function TehranMetroMap({ graph, onSelectNode, playMode = false, lang = 'fa' }) {
+  const isFa = lang === 'fa';
+  const nodeLabel = (n) => (isFa ? n.name_fa : n.name_en);
+  const lineLabel = (l) => (isFa ? l.name_fa : l.name_en);
+
   const { lineById, nodeById, edgesWithPoints, bounds } = useMemo(() => {
     const lineById = Object.fromEntries((graph?.lines ?? []).map((l) => [l.id, l]));
     const nodeById = Object.fromEntries((graph?.nodes ?? []).map((n) => [n.id, n]));
@@ -104,18 +108,11 @@ export default function TehranMetroMap({ graph, onSelectNode, playMode = false }
   }, [graph]);
 
   const baseStroke = 10;
-
   if (!graph) return null;
 
   return (
     <div style={styles.wrap}>
-      <svg
-        viewBox={`${bounds.x} ${bounds.y} ${bounds.w} ${bounds.h}`}
-        style={styles.svg}
-        role="img"
-        aria-label="Tehran Metro schematic map"
-      >
-        {/* Base edges (optional) */}
+      <svg viewBox={`${bounds.x} ${bounds.y} ${bounds.w} ${bounds.h}`} style={styles.svg} role="img" aria-label="Metro schematic map">
         {!playMode &&
           edgesWithPoints.map((e) => {
             const color = lineById[e.line_id]?.color_hex ?? '#999';
@@ -134,12 +131,9 @@ export default function TehranMetroMap({ graph, onSelectNode, playMode = false }
             );
           })}
 
-        {/* Nodes + manual label placement */}
         {(graph.nodes ?? []).map((n) => {
           const isIntersection = isIntersectionNode(n.id);
-          // bigger circles for intersections when playMode is off
           const r = isIntersection && !playMode ? 8 : 6;
-          // fill intersections with a darker color when playMode is off
           const f = isIntersection && !playMode ? '#111' : '#fff';
 
           const cfg = LABELS[n.id] ?? DEFAULT_LABEL;
@@ -149,29 +143,19 @@ export default function TehranMetroMap({ graph, onSelectNode, playMode = false }
           const anchor = cfg.anchor ?? 'start';
           const baseline = cfg.baseline ?? 'middle';
 
-          // Optional: show labels that are still default in a lighter color so you know what to tune
-          const isManual = Boolean(LABELS[n.id]);
-          const labelFill = isManual ? 'rgba(0,0,0,0.80)' : 'rgba(0,0,0,0.55)';
-
           return (
-            <g
-              key={`node-${n.id}`}
-              onClick={() => onSelectNode?.(n)}
-              style={{ cursor: onSelectNode ? 'pointer' : 'default' }}
-            >
-              <circle cx={n.x} cy={n.y} r={r} fill="rgba(255,255,255,0.92)" stroke="rgba(0,0,0,0)" />
+            <g key={`node-${n.id}`} onClick={() => onSelectNode?.(n)} style={{ cursor: onSelectNode ? 'pointer' : 'default' }}>
               <circle cx={n.x} cy={n.y} r={r} fill={f} stroke="#111" strokeWidth={2.5} />
-
               <text
                 x={labelX}
                 y={labelY}
                 fontSize={FONT_LABEL}
                 fontFamily="system-ui, -apple-system, Segoe UI, Roboto, Arial"
-                fill={labelFill}
+                fill="rgba(0,0,0,0.80)"
                 textAnchor={anchor}
                 dominantBaseline={baseline}
               >
-                {n.name_fa}
+                {nodeLabel(n)}
               </text>
             </g>
           );
@@ -179,14 +163,8 @@ export default function TehranMetroMap({ graph, onSelectNode, playMode = false }
 
         {/* Legend (no background box) */}
         <g transform={`translate(${bounds.x + 18}, ${bounds.y + 18})`}>
-          <text
-            x="0"
-            y="12"
-            fontSize={FONT_LEGEND_TITLE}
-            fontFamily="system-ui, -apple-system, Segoe UI, Roboto, Arial"
-            fill="rgba(0,0,0,0.72)"
-          >
-            Lines 1–4
+          <text x="0" y="12" fontSize={FONT_LEGEND_TITLE} fontFamily="system-ui, -apple-system, Segoe UI, Roboto, Arial" fill="rgba(0,0,0,0.72)">
+            {isFa ? 'خطوط ۱ تا ۴' : 'Lines 1–4'}
           </text>
 
           {(graph.lines ?? [])
@@ -195,21 +173,17 @@ export default function TehranMetroMap({ graph, onSelectNode, playMode = false }
             .map((l, i) => (
               <g key={`leg-${l.id}`} transform={`translate(0, ${20 + i * 16})`}>
                 <line x1="0" y1="6" x2="34" y2="6" stroke={l.color_hex} strokeWidth="7" strokeLinecap="round" />
-                <text
-                  x="44"
-                  y="9"
-                  fontSize={FONT_LEGEND_ITEM}
-                  fontFamily="system-ui, -apple-system, Segoe UI, Roboto, Arial"
-                  fill="rgba(0,0,0,0.78)"
-                >
-                  {l.name_fa}
+                <text x="44" y="9" fontSize={FONT_LEGEND_ITEM} fontFamily="system-ui, -apple-system, Segoe UI, Roboto, Arial" fill="rgba(0,0,0,0.78)">
+                  {lineLabel(l)}
                 </text>
               </g>
             ))}
         </g>
       </svg>
 
-      <div style={styles.hint}>Station names are always shown (English). Label placement is manual.</div>
+      <div style={styles.hint}>
+        {isFa ? 'نام ایستگاه‌ها نمایش داده می‌شوند.' : 'Station names are always shown.'}
+      </div>
     </div>
   );
 }

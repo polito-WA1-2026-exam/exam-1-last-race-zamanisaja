@@ -22,6 +22,8 @@ export default function App() {
   // Phase: false = map-only (full width), true = split view (map + edges)
   const [ready, setReady] = useState(false);
 
+  const [lang, setLang] = useState('fa'); // 'fa' | 'en'
+
   function toggleEdge(edgeId) {
     setSelectedEdgeIds((prev) => {
       const s = new Set(prev);
@@ -93,6 +95,8 @@ export default function App() {
         onLogout={handleLogout}
         onShowLogin={() => setAuthView('login')}
         onShowRegister={() => setAuthView('register')}
+        lang={lang}
+        onToggleLang={() => setLang(l => (l === 'en' ? 'fa' : 'en'))}
       />
 
       <Container fluid className="py-4">
@@ -153,6 +157,7 @@ export default function App() {
                   <TehranMetroMap
                     graph={metroGraph}
                     playMode={ready}   // not ready: edges ON, ready: edges OFF
+                    lang={lang}
                   />
                 </div>
 
@@ -176,6 +181,7 @@ export default function App() {
                         graph={metroGraph}
                         selectedEdgeIds={selectedEdgeIds}
                         onToggleEdge={toggleEdge}
+                        lang={lang}
                       />
                     </div>
                   </div>

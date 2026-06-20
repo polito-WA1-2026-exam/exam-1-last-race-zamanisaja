@@ -3,7 +3,7 @@ import { Container, Spinner, Alert } from 'react-bootstrap';
 import AppNavbar from './components/AppNavbar.jsx';
 import TehranMetroMap from './components/TehranMetroMap.jsx';
 import MetroEdgesTable from './components/MetroEdgesTable.jsx';
-import { pickRandomStations, getStationLabel, validateRoute } from './components/utils.js';
+import { pickRandomStations, getStationLabel, validateRoute, simulateEdgeEventsAndScore } from './components/utils.js';
 import { API } from './api.js';
 
 export default function App() {
@@ -14,7 +14,9 @@ export default function App() {
 
   const [metroGraph, setMetroGraph] = useState(null);
   const [metroError, setMetroError] = useState('');
-
+  
+  const [events, setEvents] = useState([]);
+  
   const [selectedEdgeIds, setSelectedEdgeIds] = useState([]);     // live selection (play)
   const [submittedEdgeIds, setSubmittedEdgeIds] = useState([]);   // frozen selection (validation)
 
@@ -28,6 +30,9 @@ export default function App() {
   const [destinationStation, setDestinationStation] = useState(null);
 
   const [validationResult, setValidationResult] = useState(null);
+
+  const [score, setScore] = useState(null); // null until validation happens
+
 
   const showSplit = mode === 'play'; // restore 50/50 only in play mode
 
@@ -52,6 +57,9 @@ export default function App() {
 
   function startRound() {
     if (!metroGraph) return;
+
+    // set the score to null at the start of a new round (before validation)
+    setScore(null);
 
     const pair = pickRandomStations(metroGraph, 3);
     if (!pair) {
@@ -84,27 +92,33 @@ export default function App() {
 
     setValidationResult(null);
     setMetroError('');
+    setScore(null);
   }
 
   const enterValidateMode = useCallback(() => {
     if (!metroGraph) return;
 
-    // Snapshot BEFORE clearing (requirement: table becomes unselected in validation)
-    const snapshot = selectedEdgeIds;
+    const snapshot = [...selectedEdgeIds];
 
     setSubmittedEdgeIds(snapshot);
     setSelectedEdgeIds([]);
 
-  const result = validateRoute(
-    metroGraph,
-    snapshot,             // the edges selected during play
-    startStation?.id,
-    destinationStation?.id
-  );
-  setValidationResult(result);
+    const result = validateRoute(metroGraph, snapshot, startStation?.id, destinationStation?.id);
+    setValidationResult(result);
+
+    if (!result.ok) {
+      setScore(0);
+    } else {
+      if (!events.length) {
+        setScore(20);
+      } else {
+        const { finalScore } = simulateEdgeEventsAndScore(snapshot, events, 20);
+        setScore(finalScore);
+      }
+    }
 
     setMode('validation');
-  }, [metroGraph, selectedEdgeIds, startStation?.id, destinationStation?.id]);
+  }, [metroGraph, selectedEdgeIds, startStation?.id, destinationStation?.id, events]);
 
   // Session restore
   useEffect(() => {
@@ -130,6 +144,13 @@ export default function App() {
         setMetroGraph(null);
         setMetroError(err.message || 'Failed to load metro graph');
       });
+  }, []);
+
+  // Load events
+  useEffect(() => {
+    API.listEvents()
+      .then(setEvents)
+      .catch(() => setEvents([]));
   }, []);
 
   // Countdown: only in play mode; at 0 -> auto validation
@@ -276,18 +297,21 @@ export default function App() {
               <Alert variant={validationResult.ok ? 'success' : 'danger'} className="mb-3">
                 <strong>{validationResult.ok ? 'Correct!' : 'Not valid'}</strong>
                 <div style={{ fontSize: 13, opacity: 0.9 }}>
-                  {validationResult.ok
-                    ? 'Your selected edges form a connected route from start to destination.'
-                    : validationResult.reason}
+                  {validationResult.ok ? (
+                    <>
+                      Your route is valid. Score: <strong>{score ?? 0}</strong>
+                    </>
+                  ) : (
+                    <>
+                      Score: <strong>0</strong> — {validationResult.reason}
+                    </>
+                  )}
                 </div>
               </Alert>
             )}
 
             {!metroGraph ? (
-              <div
-                className="d-flex justify-content-center align-items-center"
-                style={{ height: '60vh', minHeight: 520 }}
-              >
+              <div className="d-flex justify-content-center align-items-center" style={{ height: '60vh', minHeight: 520 }}>
                 <Spinner animation="border" />
               </div>
             ) : (

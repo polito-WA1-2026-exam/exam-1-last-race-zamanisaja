@@ -3,7 +3,7 @@ import { Container, Spinner, Alert } from 'react-bootstrap';
 import AppNavbar from './components/AppNavbar.jsx';
 import TehranMetroMap from './components/TehranMetroMap.jsx';
 import MetroEdgesTable from './components/MetroEdgesTable.jsx';
-import { pickRandomStations, getStationLabel, validateSelectedEdges } from './components/utils.js';
+import { pickRandomStations, getStationLabel, validateRoute } from './components/utils.js';
 import { API } from './api.js';
 
 export default function App() {
@@ -95,13 +95,13 @@ export default function App() {
     setSubmittedEdgeIds(snapshot);
     setSelectedEdgeIds([]);
 
-    const result = validateSelectedEdges(
-      metroGraph,
-      snapshot,
-      startStation?.id,
-      destinationStation?.id
-    );
-    setValidationResult(result);
+  const result = validateRoute(
+    metroGraph,
+    snapshot,             // the edges selected during play
+    startStation?.id,
+    destinationStation?.id
+  );
+  setValidationResult(result);
 
     setMode('validation');
   }, [metroGraph, selectedEdgeIds, startStation?.id, destinationStation?.id]);

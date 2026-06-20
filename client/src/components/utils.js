@@ -1,9 +1,12 @@
 // utils.js
+// One home for: labels, random start/destination picker, and route validation.
 
 export function getStationLabel(station, lang = 'fa') {
   if (!station) return '-';
   return lang === 'fa' ? station.name_fa : station.name_en;
 }
+
+/* ------------------------ Random station picking ------------------------ */
 
 function buildAdjacency(graph) {
   const adj = new Map();
@@ -48,6 +51,7 @@ function shortestDistance(graph, startId, endId) {
 
 /**
  * Picks random { start, destination } stations such that shortest-path distance >= minDistance.
+ * Returns null if not found within attemptLimit tries.
  */
 export function pickRandomStations(graph, minDistance = 3, attemptLimit = 200) {
   if (!graph?.nodes || !graph?.edges) return null;
@@ -73,115 +77,157 @@ export function pickRandomStations(graph, minDistance = 3, attemptLimit = 200) {
   return null;
 }
 
+/* ------------------------ Route validation (game rules) ------------------------ */
+
+function keyUndirected(a, b) {
+  return a < b ? `${a}__${b}` : `${b}__${a}`;
+}
+
 /**
- * Validate a user's chosen edges as a "path attempt".
+ * Interchange = station incident to edges from 2+ different lines.
+ * (Computed from the full graph so it matches the real metro rules.)
+ */
+function computeInterchanges(graph) {
+  const byStation = new Map(); // stationId -> Set(line_id)
+
+  for (const e of graph.edges || []) {
+    if (!byStation.has(e.from_node_id)) byStation.set(e.from_node_id, new Set());
+    if (!byStation.has(e.to_node_id)) byStation.set(e.to_node_id, new Set());
+    byStation.get(e.from_node_id).add(e.line_id);
+    byStation.get(e.to_node_id).add(e.line_id);
+  }
+
+  const interchanges = new Set();
+  for (const [stationId, lineSet] of byStation.entries()) {
+    if (lineSet.size >= 2) interchanges.add(stationId);
+  }
+
+  return interchanges;
+}
+
+/**
+ * Valid route rules:
+ * - Must start at startStationId and end at destinationStationId
+ * - Each chosen segment must be a real edge in the graph
+ * - Segments must form a single continuous traversal (a "walk")
+ * - Line changes allowed only at interchange stations
+ * - Station repeats allowed
+ * - No segment used more than once
  *
- * Checks:
- *  1) All selected edges are connected together (one connected component).
- *  2) The endpoints of the selection match the required (startStationId, destinationStationId).
- *
- * Notes:
- * - This does NOT enforce "simple path" (no cycles) by default.
- * - If the user selects extra branches, it will fail endpoint logic (usually).
+ * NOTE:
+ * selectedEdgeIds is an unordered set. We validate by trying to ORDER them into
+ * a legal route that uses every chosen edge exactly once.
  *
  * Returns:
  * {
  *   ok: boolean,
- *   connected: boolean,
- *   endpointsMatch: boolean,
- *   endpoints: string[], // station ids that are endpoints (degree 1) in the selected subgraph
- *   reason?: string
+ *   reason?: string,
+ *   routeEdgeIds?: string[],
+ *   routeNodeIds?: string[],
  * }
  */
-export function validateSelectedEdges(graph, selectedEdgeIds, startStationId, destinationStationId) {
-  if (!graph) {
-    return { ok: false, connected: false, endpointsMatch: false, endpoints: [], reason: 'Graph missing' };
-  }
+export function validateRoute(graph, selectedEdgeIds, startStationId, destinationStationId) {
+  if (!graph) return { ok: false, reason: 'Graph missing' };
+  if (!startStationId || !destinationStationId) return { ok: false, reason: 'Start/destination missing' };
 
   if (!Array.isArray(selectedEdgeIds) || selectedEdgeIds.length === 0) {
-    return { ok: false, connected: false, endpointsMatch: false, endpoints: [], reason: 'No edges selected' };
+    return { ok: false, reason: 'No edges selected' };
   }
 
-  if (!startStationId || !destinationStationId) {
-    return { ok: false, connected: false, endpointsMatch: false, endpoints: [], reason: 'Start/destination missing' };
+  // (A) No duplicate edge IDs
+  const idSet = new Set(selectedEdgeIds);
+  if (idSet.size !== selectedEdgeIds.length) {
+    return { ok: false, reason: 'A segment was selected more than once' };
   }
 
+  // (B) All edges exist
   const edgeById = new Map((graph.edges || []).map((e) => [e.id, e]));
-  const selectedEdges = selectedEdgeIds
-    .map((id) => edgeById.get(id))
-    .filter(Boolean);
+  const chosenEdges = selectedEdgeIds.map((id) => edgeById.get(id)).filter(Boolean);
+  if (chosenEdges.length !== selectedEdgeIds.length) {
+    return { ok: false, reason: 'Some selected edges do not exist in the graph' };
+  }
 
-  if (selectedEdges.length !== selectedEdgeIds.length) {
+  // (C) No duplicate physical segments (in case the dataset ever has parallel IDs)
+  const segSet = new Set();
+  for (const e of chosenEdges) {
+    const k = keyUndirected(e.from_node_id, e.to_node_id);
+    if (segSet.has(k)) return { ok: false, reason: 'Route contains the same segment more than once' };
+    segSet.add(k);
+  }
+
+  const interchanges = computeInterchanges(graph);
+
+  // Build adjacency only for chosen edges for fast traversal search
+  const edgesByNode = new Map(); // nodeId -> edge objects
+  for (const e of chosenEdges) {
+    if (!edgesByNode.has(e.from_node_id)) edgesByNode.set(e.from_node_id, []);
+    if (!edgesByNode.has(e.to_node_id)) edgesByNode.set(e.to_node_id, []);
+    edgesByNode.get(e.from_node_id).push(e);
+    edgesByNode.get(e.to_node_id).push(e);
+  }
+
+  if (!edgesByNode.has(startStationId)) return { ok: false, reason: 'Selected route does not touch the start station' };
+  if (!edgesByNode.has(destinationStationId))
+    return { ok: false, reason: 'Selected route does not touch the destination station' };
+
+  // Depth-first search / backtracking to find an ordering that uses each selected edge once
+  const used = new Set(); // edge.id
+  const routeEdgeIds = [];
+  const routeNodeIds = [startStationId];
+
+  function nextNodeIfAllowed(currentNode, edge, currentLineId) {
+    const next =
+      edge.from_node_id === currentNode
+        ? edge.to_node_id
+        : edge.to_node_id === currentNode
+          ? edge.from_node_id
+          : null;
+
+    if (!next) return null;
+
+    // Line-change rule
+    if (currentLineId && edge.line_id !== currentLineId) {
+      if (!interchanges.has(currentNode)) return null;
+    }
+
+    return next;
+  }
+
+  function dfs(currentNode, currentLineId) {
+    if (used.size === chosenEdges.length) {
+      return currentNode === destinationStationId;
+    }
+
+    const candidates = edgesByNode.get(currentNode) || [];
+    for (const edge of candidates) {
+      if (used.has(edge.id)) continue;
+
+      const nextNode = nextNodeIfAllowed(currentNode, edge, currentLineId);
+      if (!nextNode) continue;
+
+      used.add(edge.id);
+      routeEdgeIds.push(edge.id);
+      routeNodeIds.push(nextNode);
+
+      if (dfs(nextNode, edge.line_id)) return true;
+
+      used.delete(edge.id);
+      routeEdgeIds.pop();
+      routeNodeIds.pop();
+    }
+
+    return false;
+  }
+
+  const found = dfs(startStationId, null);
+
+  if (!found) {
     return {
       ok: false,
-      connected: false,
-      endpointsMatch: false,
-      endpoints: [],
-      reason: 'Some selected edges do not exist in the graph',
+      reason:
+        'Selected segments cannot be traversed as a single route from start to destination under the line-change rules (or would require reusing a segment).',
     };
   }
 
-  // Build adjacency only for the selected subgraph + compute degrees
-  const adj = new Map();      // stationId -> Set(neighbors)
-  const degree = new Map();   // stationId -> number
-
-  const addNode = (id) => {
-    if (!adj.has(id)) adj.set(id, new Set());
-    if (!degree.has(id)) degree.set(id, 0);
-  };
-
-  for (const e of selectedEdges) {
-    const a = e.from_node_id;
-    const b = e.to_node_id;
-
-    addNode(a);
-    addNode(b);
-
-    adj.get(a).add(b);
-    adj.get(b).add(a);
-
-    degree.set(a, degree.get(a) + 1);
-    degree.set(b, degree.get(b) + 1);
-  }
-
-  const nodesInSelection = Array.from(adj.keys());
-  if (nodesInSelection.length === 0) {
-    return { ok: false, connected: false, endpointsMatch: false, endpoints: [], reason: 'Empty selection' };
-  }
-
-  // (1) Connectivity check (BFS over selected subgraph)
-  const start = nodesInSelection[0];
-  const visited = new Set([start]);
-  const queue = [start];
-
-  while (queue.length) {
-    const cur = queue.shift();
-    for (const nxt of adj.get(cur) || []) {
-      if (!visited.has(nxt)) {
-        visited.add(nxt);
-        queue.push(nxt);
-      }
-    }
-  }
-
-  const connected = visited.size === nodesInSelection.length;
-
-  // (2) Endpoint check:
-  // For a path-like selection, endpoints are nodes with degree 1.
-  const endpoints = nodesInSelection.filter((id) => degree.get(id) === 1);
-
-  // We accept either order: (start,dest) or (dest,start)
-  const endpointsMatch =
-    endpoints.length === 2 &&
-    ((endpoints[0] === startStationId && endpoints[1] === destinationStationId) ||
-      (endpoints[0] === destinationStationId && endpoints[1] === startStationId));
-
-  const ok = connected && endpointsMatch;
-
-  let reason = undefined;
-  if (!connected) reason = 'Selected edges are not connected';
-  else if (!endpointsMatch)
-    reason = 'Selected path endpoints do not match the required start/destination';
-
-  return { ok, connected, endpointsMatch, endpoints, reason };
+  return { ok: true, routeEdgeIds, routeNodeIds };
 }

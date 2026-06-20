@@ -5,8 +5,8 @@ import LoginForm from './components/LoginForm.jsx';
 import RegisterForm from './components/RegisterForm.jsx';
 import TehranMetroMap from './components/TehranMetroMap.jsx';
 import MetroEdgesTable from './components/MetroEdgesTable.jsx';
-import { pickRandomStations } from './components/pickStations.js';
-import { getStationLabel } from './components/pickStations.js';
+import { pickRandomStations, getStationLabel } from './components/utils.js';
+
 
 import { API } from './api.js';
 

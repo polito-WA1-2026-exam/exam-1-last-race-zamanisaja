@@ -5,6 +5,9 @@ import LoginForm from './components/LoginForm.jsx';
 import RegisterForm from './components/RegisterForm.jsx';
 import TehranMetroMap from './components/TehranMetroMap.jsx';
 import MetroEdgesTable from './components/MetroEdgesTable.jsx';
+import { pickRandomStations } from './components/pickStations.js';
+import { getStationLabel } from './components/pickStations.js';
+
 import { API } from './api.js';
 
 export default function App() {
@@ -24,6 +27,9 @@ export default function App() {
   const [lang, setLang] = useState('fa'); // 'fa' | 'en'
   const [timeLeft, setTimeLeft] = useState(10);
 
+  const [startStation, setStartStation] = useState(null);
+  const [destinationStation, setDestinationStation] = useState(null);
+
   function toggleEdge(edgeId) {
     setSelectedEdgeIds((prev) => {
       const s = new Set(prev);
@@ -33,7 +39,31 @@ export default function App() {
     });
   }
 
-  // Session restore
+  function startRound() {
+    if (!metroGraph) return;
+
+    const pair = pickRandomStations(metroGraph, 3);
+    if (!pair) {
+      setMetroError('Could not find two stations at least 3 stops apart.');
+      return;
+    }
+
+    setMetroError('');
+    setSelectedEdgeIds([]);
+    setStartStation(pair.start);
+    setDestinationStation(pair.destination);
+    setTimeLeft(10);
+    setReady(true);
+  }
+
+  function stopRound() {
+    setReady(false);
+    setTimeLeft(10);
+    setSelectedEdgeIds([]);
+    setStartStation(null);
+    setDestinationStation(null);
+  }
+
   useEffect(() => {
     API.getSession()
       .then(setUser)
@@ -61,10 +91,7 @@ export default function App() {
 
   // 10-second countdown while ready
   useEffect(() => {
-    if (!ready) {
-      setTimeLeft(10);
-      return;
-    }
+    if (!ready) return;
 
     const intervalId = setInterval(() => {
       setTimeLeft((prev) => {
@@ -79,6 +106,15 @@ export default function App() {
 
     return () => clearInterval(intervalId);
   }, [ready]);
+
+  useEffect(() => {
+    if (!ready && timeLeft === 0) {
+      setSelectedEdgeIds([]);
+      setStartStation(null);
+      setDestinationStation(null);
+      setTimeLeft(10);
+    }
+  }, [ready, timeLeft]);
 
   function handleLogin(loggedInUser) {
     setUser(loggedInUser);
@@ -95,9 +131,7 @@ export default function App() {
       await API.logout();
     } finally {
       setUser(null);
-      setSelectedEdgeIds([]);
-      setReady(false);
-      setTimeLeft(10);
+      stopRound();
     }
   }
 
@@ -137,6 +171,15 @@ export default function App() {
                   </>
                 )}
               </div>
+
+              <div className="text-muted mt-2" style={{ fontSize: 14 }}>
+                <div>
+                  Start: <strong>{getStationLabel(startStation)}</strong>
+                </div>
+                <div>
+                  Destination: <strong>{getStationLabel(destinationStation)}</strong>
+                </div>
+              </div>
             </div>
 
             <div className="d-flex align-items-center gap-3 flex-wrap">
@@ -151,7 +194,10 @@ export default function App() {
               <button
                 type="button"
                 className={ready ? 'btn btn-sm btn-outline-secondary' : 'btn btn-sm btn-success'}
-                onClick={() => setReady((r) => !r)}
+                onClick={() => {
+                  if (ready) stopRound();
+                  else startRound();
+                }}
                 disabled={!metroGraph}
                 title={ready ? 'Hide edge selection' : 'Start selecting edges'}
               >

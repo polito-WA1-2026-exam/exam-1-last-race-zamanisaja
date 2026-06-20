@@ -3,12 +3,15 @@ import { useMemo } from 'react';
 /**
  * Props:
  * - graph: {
- *    lines: [{id,color_hex,name_fa,sort_order}],
- *    nodes: [{id,name_fa,name_fa,x,y,type}],
+ *    lines: [{id,color_hex,name_fa,name_en,sort_order}],
+ *    nodes: [{id,name_fa,name_en,x,y,type}],
  *    edges: [{id,from_node_id,to_node_id,line_id,sort_order}]
  *   }
  * - onSelectNode?: (node) => void
- * - playMode?: boolean   (when true: render stations + labels only)
+ * - mode?: 'normal' | 'play' | 'validation'
+ * - highlightedNodeIds?: string[]
+ * - selectedEdgeIds?: string[]
+ * - lang?: 'fa' | 'en'
  */
 
 const FONT_LABEL = 9;
@@ -70,12 +73,23 @@ const LABELS = {
 
 const DEFAULT_LABEL = { dx: 12, dy: 0, anchor: 'start', baseline: 'middle' };
 
-export default function TehranMetroMap({ graph, onSelectNode, playMode = false, lang = 'fa' }) {
+export default function TehranMetroMap({
+  graph,
+  onSelectNode,
+  mode = 'normal',
+  lang = 'fa',
+  highlightedNodeIds = [],
+  selectedEdgeIds = [],
+}) {
   const isFa = lang === 'fa';
+  const isNormalMode = mode === 'normal';
+  const isPlayMode = mode === 'play';
+  const isValidationMode = mode === 'validation';
+
   const nodeLabel = (n) => (isFa ? n.name_fa : n.name_en);
   const lineLabel = (l) => (isFa ? l.name_fa : l.name_en);
 
-  const { lineById, nodeById, edgesWithPoints, bounds } = useMemo(() => {
+  const { lineById, edgesWithPoints, bounds } = useMemo(() => {
     const lineById = Object.fromEntries((graph?.lines ?? []).map((l) => [l.id, l]));
     const nodeById = Object.fromEntries((graph?.nodes ?? []).map((n) => [n.id, n]));
 
@@ -104,17 +118,39 @@ export default function TehranMetroMap({ graph, onSelectNode, playMode = false, 
       h: maxY - minY + pad * 2,
     };
 
-    return { lineById, nodeById, edgesWithPoints: edges, bounds };
+    return { lineById, edgesWithPoints: edges, bounds };
   }, [graph]);
+
+  const visibleEdges = useMemo(() => {
+    if (isNormalMode) return edgesWithPoints;
+    if (isPlayMode) return [];
+    if (isValidationMode) {
+      return edgesWithPoints.filter((e) => selectedEdgeIds.includes(e.id));
+    }
+    return edgesWithPoints;
+  }, [edgesWithPoints, isNormalMode, isPlayMode, isValidationMode, selectedEdgeIds]);
+
+  const visibleNodes = useMemo(() => {
+    // commenting out, because even in play mode, we want to show all nodes
+    // if (isPlayMode) {
+    //   return (graph?.nodes ?? []).filter((n) => highlightedNodeIds.includes(n.id));
+    // }
+    return graph?.nodes ?? [];
+  }, [graph, isPlayMode, highlightedNodeIds]);
 
   const baseStroke = 10;
   if (!graph) return null;
 
   return (
     <div style={styles.wrap}>
-      <svg viewBox={`${bounds.x} ${bounds.y} ${bounds.w} ${bounds.h}`} style={styles.svg} role="img" aria-label="Metro schematic map">
-        {!playMode &&
-          edgesWithPoints.map((e) => {
+      <svg
+        viewBox={`${bounds.x} ${bounds.y} ${bounds.w} ${bounds.h}`}
+        style={styles.svg}
+        role="img"
+        aria-label="Metro schematic map"
+      >
+        {!isPlayMode &&
+          visibleEdges.map((e) => {
             const color = lineById[e.line_id]?.color_hex ?? '#999';
             return (
               <line
@@ -131,21 +167,29 @@ export default function TehranMetroMap({ graph, onSelectNode, playMode = false, 
             );
           })}
 
-        {(graph.nodes ?? []).map((n) => {
+        {visibleNodes.map((n) => {
           const isIntersection = isIntersectionNode(n.id);
-          const r = isIntersection && !playMode ? 8 : 6;
-          const f = isIntersection && !playMode ? '#111' : '#fff';
+          const isHighlighted = highlightedNodeIds.includes(n.id);
+
+          const r = isIntersection && !isPlayMode ? 8 : 6;
+
+          let fill = '#fff';
+          if (isPlayMode && isHighlighted) fill = '#22c55e';
+          else if (isIntersection && !isPlayMode) fill = '#111';
 
           const cfg = LABELS[n.id] ?? DEFAULT_LABEL;
           const labelX = n.x + (cfg.dx ?? 0);
           const labelY = n.y + (cfg.dy ?? 0);
-
           const anchor = cfg.anchor ?? 'start';
           const baseline = cfg.baseline ?? 'middle';
 
           return (
-            <g key={`node-${n.id}`} onClick={() => onSelectNode?.(n)} style={{ cursor: onSelectNode ? 'pointer' : 'default' }}>
-              <circle cx={n.x} cy={n.y} r={r} fill={f} stroke="#111" strokeWidth={2.5} />
+            <g
+              key={`node-${n.id}`}
+              onClick={() => onSelectNode?.(n)}
+              style={{ cursor: onSelectNode ? 'pointer' : 'default' }}
+            >
+              <circle cx={n.x} cy={n.y} r={r} fill={fill} stroke="#111" strokeWidth={2.5} />
               <text
                 x={labelX}
                 y={labelY}
@@ -161,28 +205,44 @@ export default function TehranMetroMap({ graph, onSelectNode, playMode = false, 
           );
         })}
 
-        {/* Legend (no background box) */}
-        <g transform={`translate(${bounds.x + 18}, ${bounds.y + 18})`}>
-          <text x="0" y="12" fontSize={FONT_LEGEND_TITLE} fontFamily="system-ui, -apple-system, Segoe UI, Roboto, Arial" fill="rgba(0,0,0,0.72)">
-            {isFa ? 'خطوط ۱ تا ۴' : 'Lines 1–4'}
-          </text>
+        {isNormalMode && (
+          <g transform={`translate(${bounds.x + 18}, ${bounds.y + 18})`}>
+            <text
+              x="0"
+              y="12"
+              fontSize={FONT_LEGEND_TITLE}
+              fontFamily="system-ui, -apple-system, Segoe UI, Roboto, Arial"
+              fill="rgba(0,0,0,0.72)"
+            >
+              {isFa ? 'خطوط ۱ تا ۴' : 'Lines 1–4'}
+            </text>
 
-          {(graph.lines ?? [])
-            .slice()
-            .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-            .map((l, i) => (
-              <g key={`leg-${l.id}`} transform={`translate(0, ${20 + i * 16})`}>
-                <line x1="0" y1="6" x2="34" y2="6" stroke={l.color_hex} strokeWidth="7" strokeLinecap="round" />
-                <text x="44" y="9" fontSize={FONT_LEGEND_ITEM} fontFamily="system-ui, -apple-system, Segoe UI, Roboto, Arial" fill="rgba(0,0,0,0.78)">
-                  {lineLabel(l)}
-                </text>
-              </g>
-            ))}
-        </g>
+            {(graph.lines ?? [])
+              .slice()
+              .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+              .map((l, i) => (
+                <g key={`leg-${l.id}`} transform={`translate(0, ${20 + i * 16})`}>
+                  <line x1="0" y1="6" x2="34" y2="6" stroke={l.color_hex} strokeWidth="7" strokeLinecap="round" />
+                  <text
+                    x="44"
+                    y="9"
+                    fontSize={FONT_LEGEND_ITEM}
+                    fontFamily="system-ui, -apple-system, Segoe UI, Roboto, Arial"
+                    fill="rgba(0,0,0,0.78)"
+                  >
+                    {lineLabel(l)}
+                  </text>
+                </g>
+              ))}
+          </g>
+        )}
       </svg>
 
       <div style={styles.hint}>
-        {isFa ? 'نام ایستگاه‌ها نمایش داده می‌شوند.' : 'Station names are always shown.'}
+        {isNormalMode && (isFa ? 'همه ایستگاه‌ها و خطوط نمایش داده می‌شوند.' : 'All stations and lines are shown.')}
+        {isPlayMode && (isFa ? 'فقط مبدا و مقصد نمایش داده می‌شوند.' : 'Only source and destination stations are shown.')}
+        {isValidationMode &&
+          (isFa ? 'فقط مسیرهای انتخاب‌شده نمایش داده می‌شوند.' : 'Only the user-selected edges are shown.')}
       </div>
     </div>
   );

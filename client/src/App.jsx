@@ -21,8 +21,11 @@ export default function App() {
 
   const [selectedEdgeIds, setSelectedEdgeIds] = useState([]);
 
-  // Phase: false = map-only (full width), true = split view (map + edges)
+  // Layout state: false = map-only, true = split view (map + edges)
   const [ready, setReady] = useState(false);
+
+  // Map mode: 'normal' | 'play' | 'validation'
+  const [mode, setMode] = useState('normal');
 
   const [lang, setLang] = useState('fa'); // 'fa' | 'en'
   const [timeLeft, setTimeLeft] = useState(10);
@@ -54,6 +57,7 @@ export default function App() {
     setDestinationStation(pair.destination);
     setTimeLeft(10);
     setReady(true);
+    setMode('play');
   }
 
   function stopRound() {
@@ -62,6 +66,11 @@ export default function App() {
     setSelectedEdgeIds([]);
     setStartStation(null);
     setDestinationStation(null);
+    setMode('normal');
+  }
+
+  function validateRound() {
+    setMode('validation');
   }
 
   useEffect(() => {
@@ -89,7 +98,7 @@ export default function App() {
       });
   }, []);
 
-  // 10-second countdown while ready
+  // 10-second countdown while round is active
   useEffect(() => {
     if (!ready) return;
 
@@ -98,6 +107,7 @@ export default function App() {
         if (prev <= 1) {
           clearInterval(intervalId);
           setReady(false);
+          setMode('normal');
           return 0;
         }
         return prev - 1;
@@ -113,17 +123,16 @@ export default function App() {
       setStartStation(null);
       setDestinationStation(null);
       setTimeLeft(10);
+      setMode('normal');
     }
   }, [ready, timeLeft]);
 
   function handleLogin(loggedInUser) {
     setUser(loggedInUser);
-    setAuthView('none');
   }
 
   function handleRegister(registeredUser) {
     setUser(registeredUser);
-    setAuthView('none');
   }
 
   async function handleLogout() {
@@ -191,6 +200,18 @@ export default function App() {
                 time left: <strong>{ready ? `${timeLeft}s` : '-'}</strong>
               </div>
 
+              {ready && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary"
+                  onClick={validateRound}
+                  disabled={selectedEdgeIds.length === 0}
+                  title="Show only the selected edges on the map"
+                >
+                  Validate
+                </button>
+              )}
+
               <button
                 type="button"
                 className={ready ? 'btn btn-sm btn-outline-secondary' : 'btn btn-sm btn-success'}
@@ -227,8 +248,10 @@ export default function App() {
                 <div style={{ height: '100%', overflow: 'auto', minWidth: 0 }}>
                   <TehranMetroMap
                     graph={metroGraph}
-                    playMode={ready}
+                    mode={mode}
                     lang={lang}
+                    highlightedNodeIds={[startStation?.id, destinationStation?.id].filter(Boolean)}
+                    selectedEdgeIds={selectedEdgeIds}
                   />
                 </div>
 
@@ -260,14 +283,25 @@ export default function App() {
                     >
                       <div style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>Edges</div>
 
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline-secondary"
-                        onClick={() => setSelectedEdgeIds([])}
-                        disabled={selectedEdgeIds.length === 0}
-                      >
-                        Clear
-                      </button>
+                      <div className="d-flex gap-2">
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-primary"
+                          onClick={() => setMode('play')}
+                          disabled={mode === 'play'}
+                        >
+                          Play mode
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary"
+                          onClick={() => setSelectedEdgeIds([])}
+                          disabled={selectedEdgeIds.length === 0}
+                        >
+                          Clear
+                        </button>
+                      </div>
                     </div>
 
                     <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>

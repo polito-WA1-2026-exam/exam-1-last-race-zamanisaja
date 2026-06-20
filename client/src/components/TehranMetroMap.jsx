@@ -8,7 +8,7 @@ import { useMemo } from 'react';
  *    edges: [{id,from_node_id,to_node_id,line_id,sort_order}]
  *   }
  * - onSelectNode?: (node) => void
- * - showEdges?: boolean   (when false: render stations + labels only)
+ * - playMode?: boolean   (when true: render stations + labels only)
  */
 
 const FONT_LABEL = 9;
@@ -70,7 +70,7 @@ const LABELS = {
 
 const DEFAULT_LABEL = { dx: 12, dy: 0, anchor: 'start', baseline: 'middle' };
 
-export default function TehranMetroMap({ graph, onSelectNode, showEdges = true }) {
+export default function TehranMetroMap({ graph, onSelectNode, playMode = false }) {
   const { lineById, nodeById, edgesWithPoints, bounds } = useMemo(() => {
     const lineById = Object.fromEntries((graph?.lines ?? []).map((l) => [l.id, l]));
     const nodeById = Object.fromEntries((graph?.nodes ?? []).map((n) => [n.id, n]));
@@ -116,7 +116,7 @@ export default function TehranMetroMap({ graph, onSelectNode, showEdges = true }
         aria-label="Tehran Metro schematic map"
       >
         {/* Base edges (optional) */}
-        {showEdges &&
+        {!playMode &&
           edgesWithPoints.map((e) => {
             const color = lineById[e.line_id]?.color_hex ?? '#999';
             return (
@@ -137,7 +137,10 @@ export default function TehranMetroMap({ graph, onSelectNode, showEdges = true }
         {/* Nodes + manual label placement */}
         {(graph.nodes ?? []).map((n) => {
           const isIntersection = isIntersectionNode(n.id);
-          const r = isIntersection ? 8 : 6;
+          // bigger circles for intersections when playMode is off
+          const r = isIntersection && !playMode ? 8 : 6;
+          // fill intersections with a darker color when playMode is off
+          const f = isIntersection && !playMode ? '#111' : '#fff';
 
           const cfg = LABELS[n.id] ?? DEFAULT_LABEL;
           const labelX = n.x + (cfg.dx ?? 0);
@@ -156,8 +159,8 @@ export default function TehranMetroMap({ graph, onSelectNode, showEdges = true }
               onClick={() => onSelectNode?.(n)}
               style={{ cursor: onSelectNode ? 'pointer' : 'default' }}
             >
-              <circle cx={n.x} cy={n.y} r={r + 3} fill="rgba(255,255,255,0.92)" stroke="rgba(0,0,0,0)" />
-              <circle cx={n.x} cy={n.y} r={r} fill={isIntersection ? '#111' : '#fff'} stroke="#111" strokeWidth={2.5} />
+              <circle cx={n.x} cy={n.y} r={r} fill="rgba(255,255,255,0.92)" stroke="rgba(0,0,0,0)" />
+              <circle cx={n.x} cy={n.y} r={r} fill={f} stroke="#111" strokeWidth={2.5} />
 
               <text
                 x={labelX}

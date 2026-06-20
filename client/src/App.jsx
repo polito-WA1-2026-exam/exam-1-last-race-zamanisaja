@@ -152,7 +152,7 @@ export default function App() {
                 <div style={{ height: '100%', overflow: 'auto', minWidth: 0 }}>
                   <TehranMetroMap
                     graph={metroGraph}
-                    showEdges={!ready}   // not ready: edges ON, ready: edges OFF
+                    playMode={ready}   // not ready: edges ON, ready: edges OFF
                   />
                 </div>
 

@@ -60,17 +60,22 @@ export default function App() {
     setMode('play');
   }
 
-  function stopRound() {
+  function enterNormalMode() {
     setReady(false);
-    setTimeLeft(10);
     setSelectedEdgeIds([]);
     setStartStation(null);
     setDestinationStation(null);
     setMode('normal');
   }
 
-  function validateRound() {
+  function enterValidateMode() {
+    setReady(false);
     setMode('validation');
+  }
+
+  function backToPlayMode() {
+    if (!ready) return;
+    setMode('play');
   }
 
   useEffect(() => {
@@ -80,14 +85,12 @@ export default function App() {
       .finally(() => setChecking(false));
   }, []);
 
-  // Keep navbar summary working
   useEffect(() => {
     API.getRecordsSummary()
       .then(setRecordsSummary)
       .catch(() => setRecordsSummary({ highScore: null, globalHighScore: null }));
   }, [user]);
 
-  // Load metro graph
   useEffect(() => {
     setMetroError('');
     API.getMetroGraph()
@@ -98,16 +101,15 @@ export default function App() {
       });
   }, []);
 
-  // 10-second countdown while round is active
+  // Countdown runs only in play mode
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || mode !== 'play') return;
 
     const intervalId = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(intervalId);
-          setReady(false);
-          setMode('normal');
+          setMode('validation');
           return 0;
         }
         return prev - 1;
@@ -115,17 +117,7 @@ export default function App() {
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [ready]);
-
-  useEffect(() => {
-    if (!ready && timeLeft === 0) {
-      setSelectedEdgeIds([]);
-      setStartStation(null);
-      setDestinationStation(null);
-      setTimeLeft(10);
-      setMode('normal');
-    }
-  }, [ready, timeLeft]);
+  }, [ready, mode]);
 
   function handleLogin(loggedInUser) {
     setUser(loggedInUser);
@@ -140,9 +132,51 @@ export default function App() {
       await API.logout();
     } finally {
       setUser(null);
-      stopRound();
+      enterNormalMode();
     }
   }
+
+  const highlightedNodeIds = [startStation?.id, destinationStation?.id].filter(Boolean);
+
+  const primaryButton = (() => {
+    if (!metroGraph) {
+      return {
+        label: 'Ready',
+        className: 'btn btn-sm btn-success',
+        onClick: startRound,
+        disabled: true,
+        title: 'Metro graph not loaded yet',
+      };
+    }
+
+    if (mode === 'normal') {
+      return {
+        label: 'Ready',
+        className: 'btn btn-sm btn-success',
+        onClick: startRound,
+        disabled: false,
+        title: 'Start selecting edges',
+      };
+    }
+
+    if (mode === 'play') {
+      return {
+        label: 'Validate',
+        className: 'btn btn-sm btn-primary',
+        onClick: enterValidateMode,
+        disabled: selectedEdgeIds.length === 0,
+        title: 'Show only the selected edges on the map',
+      };
+    }
+
+    return {
+      label: 'Restart',
+      className: 'btn btn-sm btn-outline-secondary',
+      onClick: enterNormalMode,
+      disabled: false,
+      title: 'End this round and return to the full map',
+    };
+  })();
 
   if (checking) {
     return (
@@ -197,32 +231,17 @@ export default function App() {
               </div>
 
               <div className="text-muted" style={{ fontSize: 12 }}>
-                time left: <strong>{ready ? `${timeLeft}s` : '-'}</strong>
+                time left: <strong>{mode === 'play' ? `${timeLeft}s` : '-'}</strong>
               </div>
-
-              {ready && (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-primary"
-                  onClick={validateRound}
-                  disabled={selectedEdgeIds.length === 0}
-                  title="Show only the selected edges on the map"
-                >
-                  Validate
-                </button>
-              )}
 
               <button
                 type="button"
-                className={ready ? 'btn btn-sm btn-outline-secondary' : 'btn btn-sm btn-success'}
-                onClick={() => {
-                  if (ready) stopRound();
-                  else startRound();
-                }}
-                disabled={!metroGraph}
-                title={ready ? 'Hide edge selection' : 'Start selecting edges'}
+                className={primaryButton.className}
+                onClick={primaryButton.onClick}
+                disabled={primaryButton.disabled}
+                title={primaryButton.title}
               >
-                {ready ? 'Hide edges' : 'Ready'}
+                {primaryButton.label}
               </button>
             </div>
           </div>
@@ -250,7 +269,7 @@ export default function App() {
                     graph={metroGraph}
                     mode={mode}
                     lang={lang}
-                    highlightedNodeIds={[startStation?.id, destinationStation?.id].filter(Boolean)}
+                    highlightedNodeIds={highlightedNodeIds}
                     selectedEdgeIds={selectedEdgeIds}
                   />
                 </div>
@@ -281,17 +300,20 @@ export default function App() {
                         background: '#fff',
                       }}
                     >
-                      <div style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>Edges</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>
+                        {mode === 'validation' ? 'Selected edges' : 'Edges'}
+                      </div>
 
                       <div className="d-flex gap-2">
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-primary"
-                          onClick={() => setMode('play')}
-                          disabled={mode === 'play'}
-                        >
-                          Play mode
-                        </button>
+                        {mode === 'validation' && (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-primary"
+                            onClick={backToPlayMode}
+                          >
+                            Back to play
+                          </button>
+                        )}
 
                         <button
                           type="button"

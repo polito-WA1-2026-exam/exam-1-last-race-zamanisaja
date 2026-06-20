@@ -174,7 +174,7 @@ export default function TehranMetroMap({
           const r = isIntersection && !isPlayMode ? 8 : 6;
 
           let fill = '#fff';
-          if (isPlayMode && isHighlighted) fill = '#22c55e';
+          if ((isPlayMode || isValidationMode) && isHighlighted) fill = '#22c55e';
           else if (isIntersection && !isPlayMode) fill = '#111';
 
           const cfg = LABELS[n.id] ?? DEFAULT_LABEL;

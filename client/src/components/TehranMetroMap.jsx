@@ -3,8 +3,8 @@ import { useMemo } from 'react';
 /**
  * Props:
  * - graph: {
- *    lines: [{id,color_hex,name_en,sort_order}],
- *    nodes: [{id,name_en,name_fa,x,y,type}],
+ *    lines: [{id,color_hex,name_fa,sort_order}],
+ *    nodes: [{id,name_fa,name_fa,x,y,type}],
  *    edges: [{id,from_node_id,to_node_id,line_id,sort_order}]
  *   }
  * - onSelectNode?: (node) => void
@@ -14,6 +14,61 @@ import { useMemo } from 'react';
 const FONT_LABEL = 9;
 const FONT_LEGEND_TITLE = 10;
 const FONT_LEGEND_ITEM = 9;
+
+// Manual label placement per station id.
+// dx/dy are offsets from the station (node) coordinates.
+const LABELS = {
+  // Intersections (examples — tune as you like)
+  // l1
+  // 'shahid-haghani' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  // 'shahid-hemmat' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  // 'mosalla' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  'shahid-beheshti' : { dx: 5, dy: -15, anchor: 'start', baseline: 'middle' },
+  // 'shahid-mofatteh' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  // 'shohada-ye-haftom-e-tir' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  // 'taleghani' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  'darvazeh-dowlat' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  'saadi' : { dx: -10, dy: 0, anchor: 'end', baseline: 'middle' },
+  // 'imam-khomeini' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  // 'panzdah-khordad' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  // 'khayyam' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  // l2
+  // 'shahid-madani' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  // 'emam-hossein' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  // 'darvazeh-shemiran' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  // 'baharestan' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  // 'mellat' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  'hassan-abad' : { dx: 0, dy: -15, anchor: 'middle', baseline: 'middle' },
+  'meydan-e-horr' : { dx: -10, dy: 0, anchor: 'end', baseline: 'middle' },
+  'shademan' : { dx: 0, dy: -20, anchor: 'middle', baseline: 'middle' },
+  'sharif-university' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  'tarasht' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  'sadeghiyeh' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  // l3
+  // 'shahid-sayyad-shirazi' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  // 'shahid-ghoddoosi' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  // 'sohrevardi' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  'mirza-ye-shirazi' : { dx: -25, dy: -15, anchor: 'start', baseline: 'middle' },
+  'meydan-e-jahad' : { dx: -10, dy: 0, anchor: 'end', baseline: 'middle' },
+  'vali-asr' : { dx: -10, dy: 0, anchor: 'end', baseline: 'middle' },
+  'teatr-e-shahr' : { dx: 0, dy: 20, anchor: 'middle', baseline: 'middle' },
+  // 'moniriyeh' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  // 'mahdiyeh' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  // 'rahahan' : { dx: 14, dy: -10, anchor: 'start', baseline: 'middle' },
+  // l4
+  'pirouzi' : { dx: 10, dy: 0, anchor: 'start', baseline: 'middle' },
+  'meydan-shohada' : { dx: 14, dy: -10, anchor: 'middle', baseline: 'middle' },
+  'ferdowsi' : { dx: 0, dy: -15, anchor: 'middle', baseline: 'middle' },
+  'meydan-e-enghelab' : { dx: 0, dy: -15, anchor: 'middle', baseline: 'middle' },
+  'towhid' : { dx: 0, dy: +15, anchor: 'middle', baseline: 'middle' },
+  'dr-habibollah' : { dx: -15, dy: 15, anchor: 'start', baseline: 'middle' },
+  'ostad-moein' : { dx: -15, dy: -15, anchor: 'start', baseline: 'middle' },
+  'azadi-square' : { dx: -15, dy: 15, anchor: 'start', baseline: 'middle' },
+  'bimeh' : { dx: -10, dy: -15, anchor: 'start', baseline: 'middle' },
+  'mehrabad-t1-2' : { dx: 14, dy: 0, anchor: 'start', baseline: 'middle' },
+};
+
+const DEFAULT_LABEL = { dx: 12, dy: 0, anchor: 'start', baseline: 'middle' };
 
 export default function TehranMetroMap({ graph, onSelectNode, showEdges = true }) {
   const { lineById, nodeById, edgesWithPoints, bounds } = useMemo(() => {
@@ -52,8 +107,6 @@ export default function TehranMetroMap({ graph, onSelectNode, showEdges = true }
 
   if (!graph) return null;
 
-  const centerX = bounds.x + bounds.w / 2;
-
   return (
     <div style={styles.wrap}>
       <svg
@@ -81,14 +134,21 @@ export default function TehranMetroMap({ graph, onSelectNode, showEdges = true }
             );
           })}
 
-        {/* Nodes + always-on English labels */}
+        {/* Nodes + manual label placement */}
         {(graph.nodes ?? []).map((n) => {
-          const isImportant = isIntersectionNode(n.id);
-          const r = isImportant ? 8 : 6;
+          const isIntersection = isIntersectionNode(n.id);
+          const r = isIntersection ? 8 : 6;
 
-          // flip label left/right to reduce collisions
-          const onRight = n.x < centerX;
-          const labelDx = onRight ? 10 : -10;
+          const cfg = LABELS[n.id] ?? DEFAULT_LABEL;
+          const labelX = n.x + (cfg.dx ?? 0);
+          const labelY = n.y + (cfg.dy ?? 0);
+
+          const anchor = cfg.anchor ?? 'start';
+          const baseline = cfg.baseline ?? 'middle';
+
+          // Optional: show labels that are still default in a lighter color so you know what to tune
+          const isManual = Boolean(LABELS[n.id]);
+          const labelFill = isManual ? 'rgba(0,0,0,0.80)' : 'rgba(0,0,0,0.55)';
 
           return (
             <g
@@ -97,18 +157,18 @@ export default function TehranMetroMap({ graph, onSelectNode, showEdges = true }
               style={{ cursor: onSelectNode ? 'pointer' : 'default' }}
             >
               <circle cx={n.x} cy={n.y} r={r + 3} fill="rgba(255,255,255,0.92)" stroke="rgba(0,0,0,0)" />
-              <circle cx={n.x} cy={n.y} r={r} fill={isImportant ? '#111' : '#fff'} stroke="#111" strokeWidth={2.5} />
+              <circle cx={n.x} cy={n.y} r={r} fill={isIntersection ? '#111' : '#fff'} stroke="#111" strokeWidth={2.5} />
 
               <text
-                x={n.x + labelDx}
-                y={n.y}
+                x={labelX}
+                y={labelY}
                 fontSize={FONT_LABEL}
                 fontFamily="system-ui, -apple-system, Segoe UI, Roboto, Arial"
-                fill="rgba(0,0,0,0.78)"
-                textAnchor={onRight ? 'start' : 'end'}
-                dominantBaseline="middle"
+                fill={labelFill}
+                textAnchor={anchor}
+                dominantBaseline={baseline}
               >
-                {n.name_en}
+                {n.name_fa}
               </text>
             </g>
           );
@@ -139,14 +199,14 @@ export default function TehranMetroMap({ graph, onSelectNode, showEdges = true }
                   fontFamily="system-ui, -apple-system, Segoe UI, Roboto, Arial"
                   fill="rgba(0,0,0,0.78)"
                 >
-                  {l.name_en}
+                  {l.name_fa}
                 </text>
               </g>
             ))}
         </g>
       </svg>
 
-      <div style={styles.hint}>Station names are always shown (English).</div>
+      <div style={styles.hint}>Station names are always shown (English). Label placement is manual.</div>
     </div>
   );
 }
@@ -157,7 +217,6 @@ function isIntersectionNode(id) {
     id === 'teatr-e-shahr' ||
     id === 'shahid-beheshti' ||
     id === 'imam-khomeini' ||
-    // id === 'meydan-e-enghelab' ||
     id === 'darvazeh-shemiran' ||
     id === 'shademan'
   );

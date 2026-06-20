@@ -56,7 +56,7 @@ const NODES = [
   S('mellat', 'Mellat', 'ملت', 660, 510),
   // imam-khomeini is already defined above (intersection)
   S('hassan-abad', 'Hassan Abad', 'حسن‌آباد', 595, 545),
-  S('meydan-e-horr', 'Meydan-e Horr', 'میدان حر', 545, 545),
+  S('meydan-e-horr', 'Meydan-e Horr', 'میدان حر', 525, 545),
   S('shademan', 'Shademan', 'شادمان', 460, 460), // intersection (L2/L4)
   S('sharif-university', 'Sharif University', 'دانشگاه شریف', 425, 425),
   S('tarasht', 'Tarasht', 'طرشت', 400, 400),
@@ -77,11 +77,11 @@ const NODES = [
   // shahid-beheshti is already defined above (intersection)
   S('mirza-ye-shirazi', 'Mirza-ye Shirazi', 'میرزا شیرازی', 600, 325),
   S('meydan-e-jahad', 'Meydan-e Jahad', 'میدان جهاد', 575, 355),
-  S('vali-asr', 'Meydan-e Vali Asr', 'میدان حضرت ولی‌عصر', 550, 390),
+  S('vali-asr', 'Meydan-e Vali Asr', 'میدان ولی‌عصر', 550, 390),
   S('teatr-e-shahr', 'Theatre Shahr', 'تئاتر شهر', 550, 460), // intersection (L3/L4)
   S('moniriyeh', 'Moniriyeh', 'منیریه', 550, 600),
   S('mahdiyeh', 'Mahdiyeh', 'مهدیه', 550, 640),
-  S('rahahan', 'Rahahan (Central Railway Station)', 'راه‌آهن', 550, 680),
+  S('rahahan', 'Rahahan', 'راه‌آهن', 550, 680),
   // S('azadegan', 'Azadegan', 'آزادگان', 520, 850),
 
   // ---------------- L4 (Kolahdouz -> Mehrabad) ----------------
@@ -101,7 +101,7 @@ const NODES = [
   S('ostad-moein', 'Ostad Moein', 'استاد معین', 385, 460),
   S('azadi-square', 'Azadi Square', 'میدان آزادی', 350, 460),
   S('bimeh', 'Bimeh', 'بیمه', 325, 460),
-  S('mehrabad-t1-2', 'Mehrabad Airport Terminal 1&2', 'پایانه ۱ و ۲ فرودگاه مهرآباد', 325, 500),
+  S('mehrabad-t1-2', 'Mehrabad Airport', 'فرودگاه مهرآباد', 325, 500),
   // S('mehrabad-t4-6', 'Mehrabad Airport Terminal 4&6', 'پایانه ۴ و ۶ فرودگاه مهرآباد', 325, 550),
 ];
 

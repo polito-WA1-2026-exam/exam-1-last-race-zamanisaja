@@ -150,7 +150,10 @@ export default function App() {
               >
                 {/* Map (always visible) */}
                 <div style={{ height: '100%', overflow: 'auto', minWidth: 0 }}>
-                  <TehranMetroMap graph={metroGraph} highlightEdgeIds={selectedEdgeIds} />
+                  <TehranMetroMap
+                    graph={metroGraph}
+                    showEdges={!ready}   // not ready: edges ON, ready: edges OFF
+                  />
                 </div>
 
                 {/* Edge selection (only when ready) */}

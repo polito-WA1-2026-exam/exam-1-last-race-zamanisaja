@@ -7,16 +7,15 @@ import { useMemo } from 'react';
  *    nodes: [{id,name_en,name_fa,x,y,type}],
  *    edges: [{id,from_node_id,to_node_id,line_id,sort_order}]
  *   }
- * - highlightEdgeIds?: number[]  (future game: selected route edges)
  * - onSelectNode?: (node) => void
+ * - showEdges?: boolean   (when false: render stations + labels only)
  */
 
-const FONT_LABEL = 10;
-const FONT_LEGEND_TITLE = 11;
-const FONT_LEGEND_ITEM = 10;
+const FONT_LABEL = 9;
+const FONT_LEGEND_TITLE = 10;
+const FONT_LEGEND_ITEM = 9;
 
-
-export default function TehranMetroMap({ graph, highlightEdgeIds = [], onSelectNode }) {
+export default function TehranMetroMap({ graph, onSelectNode, showEdges = true }) {
   const { lineById, nodeById, edgesWithPoints, bounds } = useMemo(() => {
     const lineById = Object.fromEntries((graph?.lines ?? []).map((l) => [l.id, l]));
     const nodeById = Object.fromEntries((graph?.nodes ?? []).map((n) => [n.id, n]));
@@ -49,10 +48,7 @@ export default function TehranMetroMap({ graph, highlightEdgeIds = [], onSelectN
     return { lineById, nodeById, edgesWithPoints: edges, bounds };
   }, [graph]);
 
-  const highlightSet = useMemo(() => new Set((highlightEdgeIds ?? []).map(Number)), [highlightEdgeIds]);
-
   const baseStroke = 10;
-  const highlightStroke = 16;
 
   if (!graph) return null;
 
@@ -66,92 +62,33 @@ export default function TehranMetroMap({ graph, highlightEdgeIds = [], onSelectN
         role="img"
         aria-label="Tehran Metro schematic map"
       >
-        <defs>
-          <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-            <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(0,0,0,0.05)" strokeWidth="1" />
-          </pattern>
-
-          <filter id="edgeGlow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feColorMatrix
-              in="blur"
-              type="matrix"
-              values="
-                1 0 0 0 0
-                0 1 0 0 0
-                0 0 1 0 0
-                0 0 0 0.55 0"
-              result="coloredBlur"
-            />
-            <feMerge>
-              <feMergeNode in="coloredBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
-        {/* <rect x={bounds.x} y={bounds.y} width={bounds.w} height={bounds.h} fill="url(#grid)" /> */}
-
-        {/* Edges (base) */}
-        {edgesWithPoints.map((e) => {
-          const color = lineById[e.line_id]?.color_hex ?? '#999';
-          return (
-            <line
-              key={`edge-${e.id}`}
-              x1={e.a.x}
-              y1={e.a.y}
-              x2={e.b.x}
-              y2={e.b.y}
-              stroke={color}
-              strokeWidth={baseStroke}
-              strokeLinecap="round"
-              opacity={0.95}
-            />
-          );
-        })}
-
-        {/* Highlighted route edges (drawn on top) */}
-        {edgesWithPoints
-          .filter((e) => highlightSet.has(Number(e.id)))
-          .map((e) => {
-            const color = lineById[e.line_id]?.color_hex ?? '#111';
+        {/* Base edges (optional) */}
+        {showEdges &&
+          edgesWithPoints.map((e) => {
+            const color = lineById[e.line_id]?.color_hex ?? '#999';
             return (
-              <g key={`hl-${e.id}`} filter="url(#edgeGlow)">
-                <line
-                  x1={e.a.x}
-                  y1={e.a.y}
-                  x2={e.b.x}
-                  y2={e.b.y}
-                  stroke="#fff"
-                  strokeWidth={highlightStroke + 6}
-                  strokeLinecap="round"
-                  opacity={0.95}
-                />
-                <line
-                  x1={e.a.x}
-                  y1={e.a.y}
-                  x2={e.b.x}
-                  y2={e.b.y}
-                  stroke={color}
-                  strokeWidth={highlightStroke}
-                  strokeLinecap="round"
-                  opacity={1}
-                />
-              </g>
+              <line
+                key={`edge-${e.id}`}
+                x1={e.a.x}
+                y1={e.a.y}
+                x2={e.b.x}
+                y2={e.b.y}
+                stroke={color}
+                strokeWidth={baseStroke}
+                strokeLinecap="round"
+                opacity={0.95}
+              />
             );
           })}
 
-        {/* Nodes + ALWAYS-ON English labels */}
+        {/* Nodes + always-on English labels */}
         {(graph.nodes ?? []).map((n) => {
-          const isImportant = isIntersectionNode(n.id); // optional: quick rule for your known intersections
+          const isImportant = isIntersectionNode(n.id);
           const r = isImportant ? 8 : 6;
 
           // flip label left/right to reduce collisions
-          const w = labelWidth(n.name_en);
           const onRight = n.x < centerX;
-          const dx = onRight ? 10 : -(w + 10);
-          // const rectX = n.x + dx;
-          // const rectY = n.y - 16;
+          const labelDx = onRight ? 10 : -10;
 
           return (
             <g
@@ -159,25 +96,17 @@ export default function TehranMetroMap({ graph, highlightEdgeIds = [], onSelectN
               onClick={() => onSelectNode?.(n)}
               style={{ cursor: onSelectNode ? 'pointer' : 'default' }}
             >
-              <circle cx={n.x} cy={n.y} r={r + 3} fill="rgba(255,255,255,0.9)" stroke="rgba(0,0,0,0.0)" />
+              <circle cx={n.x} cy={n.y} r={r + 3} fill="rgba(255,255,255,0.92)" stroke="rgba(0,0,0,0)" />
               <circle cx={n.x} cy={n.y} r={r} fill={isImportant ? '#111' : '#fff'} stroke="#111" strokeWidth={2.5} />
 
-              {/* <rect
-                x={rectX}
-                y={rectY}
-                rx="6"
-                ry="6"
-                width={w}
-                height="22"
-                fill="rgba(255,255,255,0.92)"
-                stroke="rgba(0,0,0,0.12)"
-              // /> */}
               <text
-                x={n.x + dx}
+                x={n.x + labelDx}
                 y={n.y}
                 fontSize={FONT_LABEL}
                 fontFamily="system-ui, -apple-system, Segoe UI, Roboto, Arial"
-                fill="#111"
+                fill="rgba(0,0,0,0.78)"
+                textAnchor={onRight ? 'start' : 'end'}
+                dominantBaseline="middle"
               >
                 {n.name_en}
               </text>
@@ -185,18 +114,15 @@ export default function TehranMetroMap({ graph, highlightEdgeIds = [], onSelectN
           );
         })}
 
-        {/* Legend */}
+        {/* Legend (no background box) */}
         <g transform={`translate(${bounds.x + 18}, ${bounds.y + 18})`}>
-          {/* <rect
+          <text
             x="0"
-            y="0"
-            width="220"
-            height={22 + (graph.lines?.length ?? 0) * 18}
-            rx="12"
-            fill="rgba(255,255,255,0.92)"
-            stroke="rgba(0,0,0,0.12)"
-          /> */}
-          <text x="14" y="18" fontSize={FONT_LEGEND_TITLE} fontFamily="system-ui, -apple-system, Segoe UI, Roboto, Arial" fill="#111">
+            y="12"
+            fontSize={FONT_LEGEND_TITLE}
+            fontFamily="system-ui, -apple-system, Segoe UI, Roboto, Arial"
+            fill="rgba(0,0,0,0.72)"
+          >
             Lines 1–4
           </text>
 
@@ -204,9 +130,15 @@ export default function TehranMetroMap({ graph, highlightEdgeIds = [], onSelectN
             .slice()
             .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
             .map((l, i) => (
-              <g key={`leg-${l.id}`} transform={`translate(14, ${28 + i * 18})`}>
-                <line x1="0" y1="6" x2="34" y2="6" stroke={l.color_hex} strokeWidth="8" strokeLinecap="round" />
-                <text x="44" y="10" fontSize={FONT_LEGEND_ITEM} fontFamily="system-ui, -apple-system, Segoe UI, Roboto, Arial" fill="#111">
+              <g key={`leg-${l.id}`} transform={`translate(0, ${20 + i * 16})`}>
+                <line x1="0" y1="6" x2="34" y2="6" stroke={l.color_hex} strokeWidth="7" strokeLinecap="round" />
+                <text
+                  x="44"
+                  y="9"
+                  fontSize={FONT_LEGEND_ITEM}
+                  fontFamily="system-ui, -apple-system, Segoe UI, Roboto, Arial"
+                  fill="rgba(0,0,0,0.78)"
+                >
                   {l.name_en}
                 </text>
               </g>
@@ -214,38 +146,21 @@ export default function TehranMetroMap({ graph, highlightEdgeIds = [], onSelectN
         </g>
       </svg>
 
-      <div style={styles.hint}>
-        Station names are always shown (English). Click stations later for gameplay.
-      </div>
+      <div style={styles.hint}>Station names are always shown (English).</div>
     </div>
   );
 }
 
-/**
- * Optional: treat your known transfer stations as “important” (bigger dot).
- * Keep this list aligned with your seed.
- */
 function isIntersectionNode(id) {
   return (
     id === 'darvazeh-dowlat' ||
     id === 'teatr-e-shahr' ||
     id === 'shahid-beheshti' ||
     id === 'imam-khomeini' ||
-    id === 'meydan-e-enghelab' ||
+    // id === 'meydan-e-enghelab' ||
     id === 'darvazeh-shemiran' ||
     id === 'shademan'
   );
-}
-
-/**
- * Cheap label width estimator so we can draw a background rect.
- */
-function labelWidth(text) {
-  const t = String(text ?? '');
-  const min = 70;
-  const max = 240;
-  const w = 12 + t.length * 6.8;
-  return Math.max(min, Math.min(max, w));
 }
 
 const styles = {
@@ -264,7 +179,7 @@ const styles = {
   },
   hint: {
     padding: '10px 12px',
-    fontSize: FONT_LABEL,
+    fontSize: 11,
     color: 'rgba(0,0,0,0.62)',
     borderTop: '1px solid rgba(0,0,0,0.08)',
   },

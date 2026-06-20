@@ -9,10 +9,10 @@ const bcrypt         = require('bcrypt');
 const SqliteStore    = require('connect-sqlite3')(session);
 
 const crypto = require('crypto');
-const { 
-  seed,
+const {
+  initReferenceData,
+  seedUsersOnce,
   // Metro
-  seedMetro,
   getMetroGraph,
   listMetroEdges,
   // Users
@@ -23,7 +23,7 @@ const {
   createRecord,
   listRecordsByOwner,
   getHighScoreByOwner,
-  getGlobalHighScore, 
+  getGlobalHighScore,
  } = require('./db');
 
 const PORT        = 3001;
@@ -239,14 +239,13 @@ app.get('/api/metro/edges', (req, res) => {
 
 
 // ── Start ────────────────────────────────────────────────────────────────────
-seed()
-  .then(() => {
-    seedMetro();
-    app.listen(PORT, () =>
-      console.log(`Server running on http://localhost:${PORT}`)
-    );
-  })
-  .catch((err) => {
-    console.error('Failed to seed database:', err);
+(async () => {
+  try {
+    initReferenceData();     // seeds metro + events (idempotent)
+    await seedUsersOnce();   // seeds demo users once (optional)
+    app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+  } catch (err) {
+    console.error('Failed to init database:', err);
     process.exit(1);
-  });
+  }
+})();

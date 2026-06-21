@@ -240,12 +240,6 @@ export default function TehranMetroMap({
           </g>
         )}
       </svg>
-
-      <div style={styles.hint}>
-        {isNormalMode && (isFa ? 'همه ایستگاه‌ها و خطوط نمایش داده می‌شوند.' : 'All stations and lines are shown.')}
-        {isPlayMode && (isFa ? 'فقط مبدا و مقصد نمایش داده می‌شوند.' : 'Only source and destination stations are shown.')}
-        {isValidationMode && (isFa ? 'فقط مسیرهای انتخاب‌شده نمایش داده می‌شوند.' : 'Only the user-selected edges are shown.')}
-      </div>
     </div>
   );
 }

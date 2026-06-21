@@ -1,5 +1,7 @@
 // utils.js
 // One home for: labels, random start/destination picker, and route validation.
+// ✅ for testing: always return these two stations (if they exist in the graph)
+const TEST_MODE = true; // set to false to restore randomness
 
 export function getStationLabel(station, lang = 'fa') {
   if (!station) return '-';
@@ -54,8 +56,6 @@ function shortestDistance(graph, startId, endId) {
  * Returns null if not found within attemptLimit tries.
  */
 export function pickRandomStations(graph, minDistance = 3, attemptLimit = 200) {
-  // ✅ for testing: always return these two stations (if they exist in the graph)
-  const TEST_MODE = true; // set to false to restore randomness
   if (TEST_MODE) {
     if (!graph?.nodes) return null;
 

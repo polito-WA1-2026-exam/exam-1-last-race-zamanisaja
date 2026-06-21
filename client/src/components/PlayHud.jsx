@@ -15,8 +15,6 @@ export default function PlayHud({
 }) {
   // We also show the HUD in normal mode so the user can hit Ready from the same place.
 
-  const dir = lang === 'fa' ? 'rtl' : 'ltr';
-
   const hasStations = !!startStation && !!destinationStation;
 
   const showTimer = mode === 'play';
@@ -24,7 +22,6 @@ export default function PlayHud({
 
   return (
     <div
-      dir={dir}
       style={{
         position: 'sticky',
         top: navbarHeight,

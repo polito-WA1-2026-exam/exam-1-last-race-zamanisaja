@@ -50,7 +50,7 @@ export default function AppNavbar({
   return (
     <Navbar id="app-navbar" bg="dark" variant="dark" expand="lg" sticky="top">
       <Container>
-        <Navbar.Brand href="#">Tehran Metro</Navbar.Brand>
+        <Navbar.Brand href="#">{lang === 'fa' ? 'مترو تهران' : 'Tehran Metro'}</Navbar.Brand>
 
         <Nav className="ms-auto align-items-center">
           <Navbar.Text className="me-3">
@@ -76,7 +76,7 @@ export default function AppNavbar({
           </Button>
         <>
           <Navbar.Text className="me-3">
-            Welcome, <strong>{user ? user.name : 'Guest'}</strong>!
+            Welcome <strong>{user ? user.name : ''}</strong>!
           </Navbar.Text>
 
           {user ? (

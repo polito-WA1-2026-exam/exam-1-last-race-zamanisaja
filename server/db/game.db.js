@@ -1,4 +1,4 @@
-{'use strict';
+'use strict';
 
 function initGameSchema(db) {
   db.exec(`
@@ -54,4 +54,3 @@ module.exports = {
   getGameById,
   listGamesByOwner,
 };
-}

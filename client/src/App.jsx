@@ -114,6 +114,10 @@ export default function App() {
       } else {
         const { finalScore } = simulateEdgeEventsAndScore(snapshot, events, 20);
         setScore(finalScore);
+        // Save game record
+        API.createGame({ score: finalScore })
+      .then((r) => console.log('[client] score submitted', { finalScore, game_id: r.game_id }))
+      .catch((e) => console.error('[client] submit failed', e));
       }
     }
 

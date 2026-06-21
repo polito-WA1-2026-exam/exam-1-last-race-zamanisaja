@@ -45,7 +45,16 @@ export const API = {
   listEvents: () => request('GET', '/api/events'),
 
   // Games
-  createGame: (score) => request('POST', '/api/games', { score }),
+  createGame: ({ score }) =>
+    fetch('/api/games', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ score }),
+    }).then(async (r) => {
+      if (!r.ok) throw new Error((await r.json()).error || 'Failed to save game');
+      return r.json();
+    }),
+    
   listGames: (limit) => {
     const qs = limit ? `?limit=${encodeURIComponent(limit)}` : '';
     return request('GET', `/api/games${qs}`);

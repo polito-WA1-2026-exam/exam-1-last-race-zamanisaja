@@ -55,4 +55,5 @@ module.exports = {
   listGamesByOwner: (owner_type, owner_id, opts) => gameDb.listGamesByOwner(db, owner_type, owner_id, opts),
   getHighGameScoreByOwner: (owner_type, owner_id) => gameDb.getHighGameScoreByOwner(db, owner_type, owner_id),
   getGlobalHighGameScore: () => gameDb.getGlobalHighGameScore(db),
+  getTopScores: (limit) => gameDb.getTopScores(db, limit),
 };

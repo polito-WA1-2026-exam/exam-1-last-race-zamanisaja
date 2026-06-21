@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { Navbar, Nav, Container, Button, OverlayTrigger, Popover, ButtonGroup } from 'react-bootstrap';
 import LoginForm from './LoginForm.jsx';
 import RegisterForm from './RegisterForm.jsx';
+import LeaderboardPopover from './LeaderboardPopover.jsx';
 import './AuthPopover.css';
 
 export default function AppNavbar({
   user,
   summary,
+  leaderboard,
   onLogout,
   onLogin,
   onRegister,
@@ -56,7 +58,15 @@ export default function AppNavbar({
         <Nav className="ms-auto align-items-center">
           <Navbar.Text className="me-3">
             High score: <strong>{summary?.highScore ?? '—'}</strong>
-            <span className="ms-2 text-secondary">(Global: {summary?.globalHighScore ?? '—'})</span>
+            <LeaderboardPopover leaderboard={leaderboard}>
+              <span
+                className="ms-2 text"
+                style={{ cursor: 'pointer', textDecoration: 'underline dotted' }}
+                title="View leaderboard"
+              >
+                (Global: {summary?.globalHighScore ?? '—'})
+              </span>
+            </LeaderboardPopover>
           </Navbar.Text>
 
           {/* Language toggle: always visible */}

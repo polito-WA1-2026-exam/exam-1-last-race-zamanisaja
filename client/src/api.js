@@ -46,4 +46,5 @@ export const API = {
     return request('GET', `/api/games${qs}`);
   },
   getGamesSummary: () => request('GET', '/api/games/summary'),
+  getLeaderboard: () => request('GET', `/api/games/leaderboard`),
 };

@@ -2,7 +2,7 @@
 
 const express = require('express');
 const crypto  = require('crypto');
-const { createGame, listGamesByOwner, getHighGameScoreByOwner, getGlobalHighGameScore } = require('../db');
+const { createGame, listGamesByOwner, getHighGameScoreByOwner, getGlobalHighGameScore, getTopScores } = require('../db');
 const { getOwner } = require('./owner');
 
 const router = express.Router();
@@ -53,5 +53,15 @@ module.exports = router;
     } catch (err) {
         console.error('[games] summary failed', err);
         return res.status(500).json({ error: 'Could not load game summary.' });
+    }
+  });
+
+  router.get('/games/leaderboard', (req, res) => {
+    try {
+      const rows = getTopScores(3);
+      return res.json(rows);
+    } catch (err) {
+      console.error('[games] leaderboard failed', err);
+      return res.status(500).json({ error: 'Could not load leaderboard.' });
     }
   });

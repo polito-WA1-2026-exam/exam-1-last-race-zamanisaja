@@ -72,6 +72,24 @@ function getGlobalHighGameScore(db) {
   return row?.globalHighScore ?? null;
 }
 
+function getTopScores(db, limit = 3) {
+  return db
+    .prepare(
+      `SELECT
+         MAX(g.score) AS score,
+         CASE
+           WHEN g.owner_type = 'user' THEN u.name
+           ELSE 'Traveller'
+         END AS name
+       FROM games g
+       LEFT JOIN users u ON g.owner_type = 'user' AND g.owner_id = u.user_id
+       GROUP BY g.owner_type, g.owner_id
+       ORDER BY score DESC
+       LIMIT ?`
+    )
+    .all(limit);
+}
+
 module.exports = {
   initGameSchema,
   createGame,
@@ -79,4 +97,5 @@ module.exports = {
   listGamesByOwner,
   getHighGameScoreByOwner,
   getGlobalHighGameScore,
+  getTopScores,
 };

@@ -16,6 +16,7 @@ export default function App() {
   const validatingRef = useRef(false);
 
   const [gamesSummary, setGamesSummary] = useState({ highScore: null, globalHighScore: null });
+  const [leaderboard, setLeaderboard] = useState([]);
 
   const [metroGraph, setMetroGraph] = useState(null);
   const [metroError, setMetroError] = useState('');
@@ -134,11 +135,12 @@ export default function App() {
 
     // Save game score (for both valid and invalid routes)
     API.createGame({ score: finalScore })
-      .then((r) => {
-        // Refresh navbar summary so it updates immediately
-        return API.getGamesSummary();
+      // Refresh navbar summary so it updates immediately after a new high score
+      .then(() => Promise.all([API.getGamesSummary(), API.getLeaderboard()]))
+      .then(([summary, lb]) => {
+        setGamesSummary(summary);
+        setLeaderboard(lb);
       })
-      .then(setGamesSummary)
       .catch((e) => console.error('[client] submit/refresh failed', e));
 
     setMode('validation');
@@ -282,6 +284,7 @@ export default function App() {
       <AppNavbar
         user={user}
         summary={gamesSummary}
+        leaderboard={leaderboard}
         onLogout={handleLogout}
         onLogin={setUser}
         onRegister={setUser}

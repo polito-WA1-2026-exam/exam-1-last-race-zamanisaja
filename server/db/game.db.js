@@ -15,13 +15,13 @@ function initGameSchema(db) {
   `);
 }
 
-function createGame(db, { game_id, owner_type, owner_id, score }) {
+function createGame(db, { game_id, owner_id, score }) {
   const info = db
     .prepare(
-      `INSERT INTO games (game_id, owner_type, owner_id, score)
-       VALUES (?, ?, ?, ?)`
+      `INSERT INTO games (game_id, owner_id, score)
+       VALUES (?, ?, ?)`
     )
-    .run(game_id, owner_type, owner_id, score);
+    .run(game_id, owner_id, score);
 
   return info.changes === 1;
 }
@@ -36,26 +36,26 @@ function getGameById(db, game_id) {
     .get(game_id);
 }
 
-function listGamesByOwner(db, owner_type, owner_id, { limit = 50 } = {}) {
+function listGamesByOwner(db, owner_id, { limit = 50 } = {}) {
   return db
     .prepare(
       `SELECT game_id, owner_type, owner_id, score, created_at
        FROM games
-       WHERE owner_type = ? AND owner_id = ?
+       WHERE owner_id = ?
        ORDER BY created_at DESC
        LIMIT ?`
     )
-    .all(owner_type, owner_id, limit);
+    .all(owner_id, limit);
 }
 
-function getHighGameScoreByOwner(db, owner_type, owner_id) {
+function getHighGameScoreByOwner(db, owner_id) {
   const row = db
     .prepare(
       `SELECT MAX(score) AS highScore
        FROM games
-       WHERE owner_type = ? AND owner_id = ?`
+       WHERE owner_id = ?`
     )
-    .get(owner_type, owner_id);
+    .get(owner_id);
 
   // row.highScore will be null if no games exist
   return row?.highScore ?? null;

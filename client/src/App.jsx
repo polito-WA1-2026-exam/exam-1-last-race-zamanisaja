@@ -4,6 +4,7 @@ import AppNavbar from './components/AppNavbar.jsx';
 import PlayHud from './components/PlayHud.jsx';
 import TehranMetroMap from './components/TehranMetroMap.jsx';
 import MetroEdgesTable from './components/MetroEdgesTable.jsx';
+import GameInstructions from './components/GameInstructions.jsx';
 import { pickRandomStations, getStationLabel, validateRoute, simulateEdgeEventsAndScore } from './components/utils.js';
 import { API } from './api.js';
 import { DEFAULT_TIMER } from './config.js';
@@ -64,6 +65,7 @@ export default function App() {
   }
 
   function startRound() {
+    if (!user) return;
     if (!metroGraph) return;
 
     // set the score to null at the start of a new round (before validation)
@@ -162,6 +164,10 @@ export default function App() {
 
   // Navbar summary
   useEffect(() => {
+    if (!user) {
+      setGamesSummary({ highScore: null, globalHighScore: null });
+      return;
+    }
     API.getGamesSummary()
       .then(setGamesSummary)
       .catch(() => setGamesSummary({ highScore: null, globalHighScore: null }));
@@ -232,6 +238,16 @@ export default function App() {
   }
 
   const primaryButton = (() => {
+    // Guests see a disabled Ready button with a tooltip
+    if (!user) {
+      return {
+        label: 'Ready',
+        className: 'btn btn-sm btn-success',
+        onClick: () => {},
+        disabled: true,
+        title: 'Please log in to play',
+      };
+    }
     if (!metroGraph) {
       return {
         label: 'Ready',
@@ -310,60 +326,68 @@ export default function App() {
       <Container fluid className="py-4">
         <div style={{ padding: '0 16px' }}>
           <div className="mt-3">
-            {metroError && <Alert variant="danger">{metroError}</Alert>}
-
-            {!metroGraph ? (
-              <div className="d-flex justify-content-center align-items-center" style={{ height: '60vh', minHeight: 520 }}>
-                <Spinner animation="border" />
-              </div>
+            {!user ? (
+              /* ── Guests: instructions only, no map ── */
+              <GameInstructions lang={lang} />
             ) : (
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: showSplit ? '1fr 1fr' : '1fr',
-                  gap: 16,
-                  height: '75vh',
-                  minHeight: 560,
-                  alignItems: 'stretch',
-                }}
-              >
-                {/* Map */}
-                <div style={{ height: '100%', overflow: 'auto', minWidth: 0 }}>
-                  <TehranMetroMap
-                    graph={metroGraph}
-                    mode={mode}
-                    lang={lang}
-                    highlightedNodeIds={highlightedNodeIds}
-                    selectedEdgeIds={visibleEdgeIds}
-                  />
-                </div>
+              /* ── Logged-in users: full game UI ── */
+              <>
+                {metroError && <Alert variant="danger">{metroError}</Alert>}
 
-                {/* Right panel ONLY in play mode (50/50 restored) */}
-                {showSplit && (
+                {!metroGraph ? (
+                  <div className="d-flex justify-content-center align-items-center" style={{ height: '60vh', minHeight: 520 }}>
+                    <Spinner animation="border" />
+                  </div>
+                ) : (
                   <div
                     style={{
-                      height: '100%',
-                      minWidth: 0,
-                      overflow: 'hidden',
-                      border: '1px solid rgba(0,0,0,0.08)',
-                      borderRadius: 12,
-                      background: '#fff',
-                      display: 'flex',
-                      flexDirection: 'column',
+                      display: 'grid',
+                      gridTemplateColumns: showSplit ? '1fr 1fr' : '1fr',
+                      gap: 16,
+                      height: '75vh',
+                      minHeight: 560,
+                      alignItems: 'stretch',
                     }}
                   >
-                    <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-                      <MetroEdgesTable
+                    {/* Map */}
+                    <div style={{ height: '100%', overflow: 'auto', minWidth: 0 }}>
+                      <TehranMetroMap
                         graph={metroGraph}
-                        selectedEdgeIds={selectedEdgeIds}
-                        onToggleEdge={toggleEdge}
-                        onClearAll={() => setSelectedEdgeIds([])}
+                        mode={mode}
                         lang={lang}
+                        highlightedNodeIds={highlightedNodeIds}
+                        selectedEdgeIds={visibleEdgeIds}
                       />
                     </div>
+
+                    {/* Right panel ONLY in play mode (50/50 restored) */}
+                    {showSplit && (
+                      <div
+                        style={{
+                          height: '100%',
+                          minWidth: 0,
+                          overflow: 'hidden',
+                          border: '1px solid rgba(0,0,0,0.08)',
+                          borderRadius: 12,
+                          background: '#fff',
+                          display: 'flex',
+                          flexDirection: 'column',
+                        }}
+                      >
+                        <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+                          <MetroEdgesTable
+                            graph={metroGraph}
+                            selectedEdgeIds={selectedEdgeIds}
+                            onToggleEdge={toggleEdge}
+                            onClearAll={() => setSelectedEdgeIds([])}
+                            lang={lang}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
+              </>
             )}
           </div>
         </div>

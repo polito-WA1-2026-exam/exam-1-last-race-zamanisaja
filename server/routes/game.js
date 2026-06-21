@@ -3,13 +3,13 @@
 const express = require('express');
 const crypto  = require('crypto');
 const { createGame, listGamesByOwner, getHighGameScoreByOwner, getGlobalHighGameScore, getTopScores } = require('../db');
-const { getOwner } = require('./owner');
+const { isLoggedIn } = require('./auth');
 
 const router = express.Router();
 
-  router.post('/games', (req, res) => {
-    const { owner_type, owner_id } = getOwner(req, res);
-    const { score } = req.body ?? {};
+router.post('/games', isLoggedIn, (req, res) => {
+  const owner_id = req.user.user_id;
+  const { score } = req.body ?? {};
 
     const num = Number(score);
     if (!Number.isFinite(num)) {
@@ -20,20 +20,20 @@ const router = express.Router();
     const game_id = crypto.randomUUID();
 
     try {
-      createGame({ game_id, owner_type, owner_id, score: intScore });
-      return res.status(201).json({ game_id, owner_type, owner_id, score: intScore });
+      createGame({ game_id, owner_id, score: intScore });
+      return res.status(201).json({ game_id, owner_id, score: intScore });
     } catch (err) {
       console.error('[games] save failed', err);
       return res.status(500).json({ error: 'Could not save game.' });
     }
   });
 
-  router.get('/games', (req, res) => {
-    const { owner_type, owner_id } = getOwner(req, res);
+  router.get('/games', isLoggedIn, (req, res) => {
+    const owner_id = req.user.user_id;
     const limit = req.query.limit ? Math.max(1, Math.min(200, Number(req.query.limit))) : 50;
 
     try {
-      const rows = listGamesByOwner(owner_type, owner_id, { limit });
+      const rows = listGamesByOwner(owner_id, { limit });
       return res.json(rows);
     } catch (err) {
       console.error('[games] list failed', err);
@@ -41,11 +41,11 @@ const router = express.Router();
     }
   });
 
-  router.get('/games/summary', (req, res) => {
-    const { owner_type, owner_id } = getOwner(req, res);
+  router.get('/games/summary', isLoggedIn, (req, res) => {
+    const owner_id = req.user.user_id;
 
     try {
-        const highScore = getHighGameScoreByOwner(owner_type, owner_id);
+        const highScore = getHighGameScoreByOwner(owner_id);
         const globalHighScore = getGlobalHighGameScore();
         return res.json({ highScore, globalHighScore });
     } catch (err) {
@@ -54,7 +54,7 @@ const router = express.Router();
     }
   });
 
-  router.get('/games/leaderboard', (req, res) => {
+  router.get('/games/leaderboard', isLoggedIn, (req, res) => {
     try {
       const rows = getTopScores(3);
       return res.json(rows);

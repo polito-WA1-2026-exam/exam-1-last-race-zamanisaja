@@ -71,3 +71,4 @@ router.delete('/sessions/current', isLoggedIn, (req, res) => {
 });
 
 module.exports = router;
+module.exports.isLoggedIn = isLoggedIn;

@@ -37,6 +37,7 @@ export default function App() {
   const [validationResult, setValidationResult] = useState(null);
 
   const [score, setScore] = useState(null); // null until validation happens
+  const [roundEvents, setRoundEvents] = useState([]); // events triggered during the round
 
   const [navbarHeight, setNavbarHeight] = useState(0); // for sticky HUD positioning
 
@@ -99,6 +100,7 @@ export default function App() {
     setValidationResult(null);
     setMetroError('');
     setScore(null);
+    setRoundEvents([]);
   }
 
   const enterValidateMode = useCallback(() => {
@@ -122,7 +124,9 @@ export default function App() {
       if (!events.length) {
         finalScore = 20;
       } else {
-        ({ finalScore } = simulateEdgeEventsAndScore(snapshot, events, 20));
+        const sim = simulateEdgeEventsAndScore(snapshot, events, 20);
+        finalScore = sim.finalScore;
+        setRoundEvents(sim.triggeredEvents ?? []);
       }
     }
 
@@ -296,6 +300,7 @@ export default function App() {
         primaryButton={primaryButton}
         validationResult={validationResult}
         score={score}
+        roundEvents={roundEvents}
         getStationLabel={getStationLabel}
       />
 

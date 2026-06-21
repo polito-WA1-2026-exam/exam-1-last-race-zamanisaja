@@ -266,6 +266,8 @@ export function assignEventsToEdges(edgeIds, events) {
       edgeId,
       eventCode: ev.code,
       eventScore: ev.score,
+      title_en: ev.title_en,
+      title_fa: ev.title_fa,
     };
   });
 }
@@ -281,5 +283,5 @@ export function calculateGameScore(assignments, baseScore = BASE_SCORE) {
 export function simulateEdgeEventsAndScore(edgeIds, events, baseScore = BASE_SCORE) {
   const assignments = assignEventsToEdges(edgeIds, events);
   const finalScore = calculateGameScore(assignments, baseScore);
-  return { baseScore, finalScore, assignments };
+  return { baseScore, finalScore, assignments, triggeredEvents: assignments };
 }

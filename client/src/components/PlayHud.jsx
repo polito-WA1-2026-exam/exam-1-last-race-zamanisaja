@@ -11,6 +11,7 @@ export default function PlayHud({
   primaryButton,
   validationResult,
   score,
+  roundEvents,
   getStationLabel,
 }) {
   // We also show the HUD in normal mode so the user can hit Ready from the same place.
@@ -93,7 +94,20 @@ export default function PlayHud({
           <strong>{validationResult.ok ? 'Correct!' : 'Not valid'}</strong>
           <div style={{ fontSize: 13, opacity: 0.9 }}>
             {validationResult.ok ? (
-              <>Your route is valid. Score: <strong>{score ?? 0}</strong></>
+              <>
+                <div>Your route is valid. Score: <strong>{score ?? 0}</strong></div>
+                {roundEvents && roundEvents.length > 0 && (
+                  <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 12 }}>
+                    {roundEvents.map((ev, i) => (
+                      <li key={i} style={{ color: ev.eventScore > 0 ? '#198754' : ev.eventScore < 0 ? '#b02a37' : 'inherit' }}>
+                        {lang === 'fa' ? ev.title_fa : ev.title_en}
+                        {' '}
+                        <strong>({ev.eventScore > 0 ? '+' : ''}{ev.eventScore})</strong>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
             ) : (
               <>Score: <strong>0</strong> — {validationResult.reason}</>
             )}

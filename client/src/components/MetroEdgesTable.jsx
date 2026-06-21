@@ -68,7 +68,7 @@ export default function MetroEdgesTable({ graph, selectedEdgeIds, onToggleEdge, 
                     </Badge>
                   </td>
                   <td>
-                    <div style={{ fontWeight: 600 }}>{a} → {b}</div>
+                    <div style={{ fontWeight: 600 }}>{a} {lang === 'fa' ? '←' : '→'} {b}</div>
                     <div className="text-muted" style={{ fontSize: 12 }}>
                       id: {e.id} • sort: {e.sort_order ?? 0}
                     </div>

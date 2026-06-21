@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { Container, Spinner, Alert } from 'react-bootstrap';
 import AppNavbar from './components/AppNavbar.jsx';
 import TehranMetroMap from './components/TehranMetroMap.jsx';
@@ -9,6 +9,9 @@ import { API } from './api.js';
 export default function App() {
   const [user, setUser] = useState(null); // null = not logged in
   const [checking, setChecking] = useState(true); // true while restoring session
+
+  // Prevent double-submit (can happen in React StrictMode / racing timer)
+  const validatingRef = useRef(false);
 
   const [gamesSummary, setGamesSummary] = useState({ highScore: null, globalHighScore: null });
 
@@ -98,6 +101,10 @@ export default function App() {
   const enterValidateMode = useCallback(() => {
     if (!metroGraph) return;
 
+    // Guard: can be triggered by timer + click, or dev StrictMode quirks
+    if (validatingRef.current) return;
+    validatingRef.current = true;
+
     const snapshot = [...selectedEdgeIds];
 
     setSubmittedEdgeIds(snapshot);
@@ -130,6 +137,11 @@ export default function App() {
 
     setMode('validation');
   }, [metroGraph, selectedEdgeIds, startStation?.id, destinationStation?.id, events]);
+
+  // Release the guard when we leave validation mode (i.e., start a new round / go back)
+  useEffect(() => {
+    if (mode !== 'play') validatingRef.current = false;
+  }, [mode]);
 
 
   // Session restore

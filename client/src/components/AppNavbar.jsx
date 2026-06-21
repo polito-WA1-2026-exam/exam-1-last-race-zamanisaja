@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Navbar, Nav, Container, Button, OverlayTrigger, Popover, ButtonGroup } from 'react-bootstrap';
 import LoginForm from './LoginForm.jsx';
 import RegisterForm from './RegisterForm.jsx';
+import './AuthPopover.css';
 
 export default function AppNavbar({
   user,
@@ -15,7 +16,7 @@ export default function AppNavbar({
   const [authTab, setAuthTab] = useState('login'); // 'login' | 'register'
 
   const authPopover = (
-    <Popover id="auth-popover">
+    <Popover id="auth-popover" style={{ maxWidth: 360, width: 360 }}>
       <Popover.Header
         as="div"
         style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
@@ -37,7 +38,7 @@ export default function AppNavbar({
         </ButtonGroup>
       </Popover.Header>
 
-      <Popover.Body style={{ width: 340 }}>
+      <Popover.Body style={{ overflowX: 'hidden' }}>
         {authTab === 'login' ? (
           <LoginForm onLogin={onLogin} compact />
         ) : (

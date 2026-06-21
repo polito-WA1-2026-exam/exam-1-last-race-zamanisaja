@@ -1,0 +1,21 @@
+#auth-popover {
+  max-width: 360px !important;
+  width: 360px !important;
+}
+
+#auth-popover .popover-body {
+  overflow: hidden;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+#auth-popover .popover-body form {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+#auth-popover .popover-body .form-control {
+  max-width: 100%;
+  box-sizing: border-box;
+}

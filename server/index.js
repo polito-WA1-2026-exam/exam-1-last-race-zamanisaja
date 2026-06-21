@@ -11,7 +11,6 @@ const SqliteStore    = require('connect-sqlite3')(session);
 const crypto = require('crypto');
 const {
   initReferenceData,
-  seedUsersOnce,
 
   // Metro
   getMetroGraph,
@@ -256,7 +255,6 @@ app.use('/api', makeGameRouter({ getOwner }));
 (async () => {
   try {
     initReferenceData();     // seeds metro + events (idempotent)
-    await seedUsersOnce();   // seeds demo users once (optional)
     app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
   } catch (err) {
     console.error('Failed to init database:', err);

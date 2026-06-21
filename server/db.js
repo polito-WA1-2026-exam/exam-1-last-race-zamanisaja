@@ -32,6 +32,7 @@ metroDb.migrateMetroSchema(db);
 function initReferenceData() {
   metroDb.seedMetro(db, metroSeed);
   eventsDb.seedEvents(db, EVENTS);
+  usersDb.seedUsersOnce(db)
 }
 
 
@@ -40,7 +41,6 @@ module.exports = {
 
   // Seed
   initReferenceData,
-  seedUsersOnce: () => usersDb.seedUsersOnce(db),
 
   // Users
   getUserByEmail: (email) => usersDb.getUserByEmail(db, email),

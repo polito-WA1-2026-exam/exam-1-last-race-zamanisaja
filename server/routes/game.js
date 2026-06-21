@@ -1,16 +1,13 @@
 'use strict';
 
 const express = require('express');
-const crypto = require('crypto');
-const {
-  createGame,
-  listGamesByOwner,
-  getHighGameScoreByOwner,
-  getGlobalHighGameScore,
-} = require('../db');
+const crypto  = require('crypto');
+const { createGame, listGamesByOwner, getHighGameScoreByOwner, getGlobalHighGameScore } = require('../db');
+const { getOwner } = require('./owner');
 
-module.exports = function makeGameRouter({ getOwner }) {
-  const router = express.Router();
+const router = express.Router();
+
+module.exports = router;
 
   router.post('/games', (req, res) => {
     const { owner_type, owner_id } = getOwner(req, res);
@@ -57,7 +54,4 @@ module.exports = function makeGameRouter({ getOwner }) {
         console.error('[games] summary failed', err);
         return res.status(500).json({ error: 'Could not load game summary.' });
     }
-    });
-
-  return router;
-};
+  });

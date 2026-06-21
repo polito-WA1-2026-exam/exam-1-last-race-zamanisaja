@@ -59,7 +59,7 @@ export function pickRandomStations(graph, minDistance = 3, attemptLimit = 200) {
   if (TEST_MODE) {
     if (!graph?.nodes) return null;
 
-    const start = graph.nodes.find((n) => n.id === 'shahid-haghani' && n.type === 'station');
+    const start = graph.nodes.find((n) => n.id === 'haghani' && n.type === 'station');
     const destination = graph.nodes.find((n) => n.id === 'sohrevardi' && n.type === 'station');
 
     if (!start || !destination) return null;

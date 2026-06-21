@@ -26,9 +26,6 @@ module.exports = function makeGameRouter({ getOwner }) {
 
     try {
       createGame({ game_id, owner_type, owner_id, score: intScore });
-
-      console.log('[games] saved', { game_id, owner_type, owner_id, score: intScore });
-
       return res.status(201).json({ game_id, owner_type, owner_id, score: intScore });
     } catch (err) {
       console.error('[games] save failed', err);

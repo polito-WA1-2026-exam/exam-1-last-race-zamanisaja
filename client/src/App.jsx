@@ -128,7 +128,6 @@ export default function App() {
     // Save game score (for both valid and invalid routes)
     API.createGame({ score: finalScore })
       .then((r) => {
-        console.log('[client] score submitted', { finalScore, game_id: r.game_id });
         // Refresh navbar summary so it updates immediately
         return API.getGamesSummary();
       })

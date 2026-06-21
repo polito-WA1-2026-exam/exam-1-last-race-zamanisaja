@@ -48,8 +48,6 @@ module.exports = {
   // Events
   listEvents: (opts) => eventsDb.listEvents(db, opts),
   getEventByCode: (code) => eventsDb.getEventByCode(db, code),
-  createRoundEvent: (data) => eventsDb.createRoundEvent(db, data),
-  listRoundEvents: (opts) => eventsDb.listRoundEvents(db, opts),
 
   // Games (export when you’re ready to use it)
   createGame: (data) => gameDb.createGame(db, data),

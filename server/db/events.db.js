@@ -106,50 +106,6 @@ function getEventByCode(db, code) {
     .get(code);
 }
 
-function createRoundEvent(db, { user_id, round_id, event_code }) {
-  const event = getEventByCode(db, event_code);
-  if (!event || event.is_active !== 1) {
-    throw new Error('Invalid or inactive event_code');
-  }
-
-  const info = db
-    .prepare('INSERT INTO round_events (user_id, round_id, event_code, score) VALUES (?, ?, ?, ?)')
-    .run(user_id, round_id, event_code, event.score);
-
-  return info.lastInsertRowid;
-}
-
-function listRoundEvents(db, { user_id, round_id } = {}) {
-  if (round_id) {
-    return db
-      .prepare(
-        `SELECT id, user_id, round_id, event_code, score, created_at
-         FROM round_events
-         WHERE round_id = ?
-         ORDER BY id ASC`
-      )
-      .all(round_id);
-  }
-
-  if (user_id) {
-    return db
-      .prepare(
-        `SELECT id, user_id, round_id, event_code, score, created_at
-         FROM round_events
-         WHERE user_id = ?
-         ORDER BY id DESC`
-      )
-      .all(user_id);
-  }
-
-  return db
-    .prepare(
-      `SELECT id, user_id, round_id, event_code, score, created_at
-       FROM round_events
-       ORDER BY id DESC`
-    )
-    .all();
-}
 
 module.exports = {
   EVENTS,
@@ -157,6 +113,4 @@ module.exports = {
   seedEvents,
   listEvents,
   getEventByCode,
-  createRoundEvent,
-  listRoundEvents,
 };

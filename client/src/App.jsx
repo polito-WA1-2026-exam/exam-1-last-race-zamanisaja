@@ -175,6 +175,11 @@ export default function App() {
 
   // Load metro graph
   useEffect(() => {
+    if (!user) {
+      setMetroGraph(null);
+      setMetroError('');
+      return;
+    }
     setMetroError('');
     API.getMetroGraph()
       .then(setMetroGraph)
@@ -182,7 +187,7 @@ export default function App() {
         setMetroGraph(null);
         setMetroError(err.message || 'Failed to load metro graph');
       });
-  }, []);
+  }, [user]);
 
   // Measure navbar height for sticky HUD positioning
   useEffect(() => {
@@ -204,10 +209,14 @@ export default function App() {
 
   // Load events
   useEffect(() => {
+    if (!user) {
+      setEvents([]);
+      return;
+    }
     API.listEvents()
       .then(setEvents)
       .catch(() => setEvents([]));
-  }, []);
+  }, [user]);
 
   // Countdown: only in play mode; at 0 -> auto validation
   useEffect(() => {

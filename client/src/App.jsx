@@ -344,36 +344,12 @@ export default function App() {
                       flexDirection: 'column',
                     }}
                   >
-                    <div
-                      style={{
-                        padding: '10px 12px',
-                        borderBottom: '1px solid rgba(0,0,0,0.08)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        position: 'sticky',
-                        top: 0,
-                        zIndex: 2,
-                        background: '#fff',
-                      }}
-                    >
-                      <div style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>Edges</div>
-
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline-secondary"
-                        onClick={() => setSelectedEdgeIds([])}
-                        disabled={selectedEdgeIds.length === 0}
-                      >
-                        Clear
-                      </button>
-                    </div>
-
                     <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
                       <MetroEdgesTable
                         graph={metroGraph}
                         selectedEdgeIds={selectedEdgeIds}
                         onToggleEdge={toggleEdge}
+                        onClearAll={() => setSelectedEdgeIds([])}
                         lang={lang}
                       />
                     </div>

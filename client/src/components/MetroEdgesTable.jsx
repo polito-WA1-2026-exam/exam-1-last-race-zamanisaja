@@ -9,6 +9,7 @@ export default function MetroEdgesTable({
   graph,
   selectedEdgeIds,
   onToggleEdge,
+  onClearAll,
   lang = 'fa',
   level = GAME_LEVEL,
   showLineInfo = level === 'easy',
@@ -59,9 +60,22 @@ export default function MetroEdgesTable({
       <Table hover size="sm" className="mb-0" style={{ margin: 0 }}>
         <thead style={{ position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
           <tr>
-            <th style={{ width: 44 }}>Pick</th>
+            <th style={{ width: 44 }}>
+              <Form.Check
+                type="checkbox"
+                checked={selected.size > 0 && selected.size === edges.length}
+                ref={(el) => {
+                  if (el) el.indeterminate = selected.size > 0 && selected.size < edges.length;
+                }}
+                onChange={() => {
+                  if (selected.size > 0) onClearAll?.();
+                  else edges.forEach((e) => onToggleEdge?.(Number(e.id)));
+                }}
+                aria-label="Deselect all"
+              />
+            </th>
             {showLineInfo && <th style={{ width: 64 }}>Line</th>}
-            <th>Edge</th>
+            <th>Segment</th>
           </tr>
         </thead>
 

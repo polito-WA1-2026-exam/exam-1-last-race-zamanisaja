@@ -106,23 +106,31 @@ export default function App() {
     const result = validateRoute(metroGraph, snapshot, startStation?.id, destinationStation?.id);
     setValidationResult(result);
 
-    if (!result.ok) {
-      setScore(0);
-    } else {
+    let finalScore = 0;
+
+    if (result.ok) {
       if (!events.length) {
-        setScore(20);
+        finalScore = 20;
       } else {
-        const { finalScore } = simulateEdgeEventsAndScore(snapshot, events, 20);
-        setScore(finalScore);
-        // Save game score
-        API.createGame({ score: finalScore })
-      .then((r) => console.log('[client] score submitted', { finalScore, game_id: r.game_id }))
-      .catch((e) => console.error('[client] submit failed', e));
+        ({ finalScore } = simulateEdgeEventsAndScore(snapshot, events, 20));
       }
     }
 
+    setScore(finalScore);
+
+    // Save game record (for both valid and invalid routes)
+    API.createGame({ score: finalScore })
+      .then((r) => {
+        console.log('[client] score submitted', { finalScore, game_id: r.game_id });
+        // Refresh navbar summary so it updates immediately
+        return API.getGamesSummary();
+      })
+      .then(setGamesSummary)
+      .catch((e) => console.error('[client] submit/refresh failed', e));
+
     setMode('validation');
   }, [metroGraph, selectedEdgeIds, startStation?.id, destinationStation?.id, events]);
+
 
   // Session restore
   useEffect(() => {

@@ -16,7 +16,7 @@ function ensureGuestId(req, res) {
 }
 
 function getOwner(req, res) {
-  if (req.isAuthenticated?.()) return { owner_type: 'user', owner_id: req.user.id };
+  if (req.isAuthenticated?.()) return { owner_type: 'user', owner_id: req.user.user_id };
   ensureGuestId(req, res);
   return { owner_type: 'guest', owner_id: req.guestId };
 }

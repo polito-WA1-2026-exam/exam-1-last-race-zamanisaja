@@ -31,7 +31,7 @@ router.post('/users', async (req, res) => {
     const hash = await bcrypt.hash(password, 10);
     createUser({ id, name, email, hash });
 
-    const user = { id, name, email };
+    const user = { user_id: id, name, email };
     req.login(user, (err) => {
       if (err) return res.status(500).json({ error: 'Registration succeeded but login failed.' });
       return res.status(201).json(user);
@@ -52,14 +52,14 @@ router.post('/sessions', (req, res, next) => {
 
     req.login(user, (err) => {
       if (err) return next(err);
-      return res.json({ id: user.id, name: user.name, email: user.email });
+      return res.json({ user_id: user.user_id, name: user.name, email: user.email });
     });
   })(req, res, next);
 });
 
 // GET /api/sessions/current  →  who am I?
 router.get('/sessions/current', isLoggedIn, (req, res) => {
-  res.json({ id: req.user.id, name: req.user.name, email: req.user.email });
+  res.json({ user_id: req.user.user_id, name: req.user.name, email: req.user.email });
 });
 
 // DELETE /api/sessions/current  →  logout

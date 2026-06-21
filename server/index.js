@@ -40,14 +40,14 @@ passport.use(new LocalStrategy({ usernameField: 'email' }, async (email, passwor
     if (!user) return done(null, false, { message: 'Invalid credentials.' });
     const match = await bcrypt.compare(password, user.hash);
     if (!match) return done(null, false, { message: 'Invalid credentials.' });
-    return done(null, { id: user.id, name: user.name, email: user.email });
+    return done(null, { user_id: user.user_id, name: user.name, email: user.email });
   } catch (err) {
     return done(err);
   }
 }));
 
 // ── user session handling ─────────────────────────────────────────────────────
-passport.serializeUser((user, done) => done(null, user.id));
+passport.serializeUser((user, done) => done(null, user.user_id));
 passport.deserializeUser((id, done) => done(null, getUserById(id) || false));
 
 

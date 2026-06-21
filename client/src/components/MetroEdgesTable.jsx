@@ -1,15 +1,13 @@
 import { useMemo } from 'react';
 import { Table, Form, Badge } from 'react-bootstrap';
-
-// ✅ for testing: always return these two stations (if they exist in the graph)
-const TEST_MODE = true; // set to false to restore randomness
+import { SHOW_LINE_INFO } from '../config.js';
 
 export default function MetroEdgesTable({
   graph,
   selectedEdgeIds,
   onToggleEdge,
   lang = 'fa',
-  showLineInfo = TEST_MODE,
+  showLineInfo = SHOW_LINE_INFO,
 }) {
   const nodeNameById = useMemo(() => {
     const m = new Map();

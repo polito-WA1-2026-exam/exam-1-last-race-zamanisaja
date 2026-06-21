@@ -6,6 +6,7 @@ import TehranMetroMap from './components/TehranMetroMap.jsx';
 import MetroEdgesTable from './components/MetroEdgesTable.jsx';
 import { pickRandomStations, getStationLabel, validateRoute, simulateEdgeEventsAndScore } from './components/utils.js';
 import { API } from './api.js';
+import { DEFAULT_TIMER } from './config.js';
 
 export default function App() {
   const [user, setUser] = useState(null); // null = not logged in
@@ -28,7 +29,7 @@ export default function App() {
   const [mode, setMode] = useState('normal');
 
   const [lang, setLang] = useState('fa');
-  const [timeLeft, setTimeLeft] = useState(10);
+  const [timeLeft, setTimeLeft] = useState(DEFAULT_TIMER);
 
   const [startStation, setStartStation] = useState(null);
   const [destinationStation, setDestinationStation] = useState(null);
@@ -81,13 +82,13 @@ export default function App() {
     setStartStation(pair.start);
     setDestinationStation(pair.destination);
 
-    setTimeLeft(10);
+    setTimeLeft(DEFAULT_TIMER);
     setMode('play');
   }
 
   function enterNormalMode() {
     setMode('normal');
-    setTimeLeft(10);
+    setTimeLeft(DEFAULT_TIMER);
 
     setSelectedEdgeIds([]);
     setSubmittedEdgeIds([]);

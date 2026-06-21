@@ -1,7 +1,6 @@
 // utils.js
 // One home for: labels, random start/destination picker, and route validation.
-// ✅ for testing: always return these two stations (if they exist in the graph)
-const TEST_MODE = true; // set to false to restore randomness
+import { TEST_MODE, START_STATION_ID, DESTINATION_STATION_ID } from '../config.js';
 
 export function getStationLabel(station, lang = 'fa') {
   if (!station) return '-';
@@ -59,8 +58,8 @@ export function pickRandomStations(graph, minDistance = 3, attemptLimit = 200) {
   if (TEST_MODE) {
     if (!graph?.nodes) return null;
 
-    const start = graph.nodes.find((n) => n.id === 'haghani' && n.type === 'station');
-    const destination = graph.nodes.find((n) => n.id === 'sohrevardi' && n.type === 'station');
+    const start = graph.nodes.find((n) => n.id === START_STATION_ID && n.type === 'station');
+    const destination = graph.nodes.find((n) => n.id === DESTINATION_STATION_ID && n.type === 'station');
 
     if (!start || !destination) return null;
     return { start, destination };

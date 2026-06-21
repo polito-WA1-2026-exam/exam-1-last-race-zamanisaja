@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { Container, Spinner, Alert } from 'react-bootstrap';
 import AppNavbar from './components/AppNavbar.jsx';
+import PlayHud from './components/PlayHud.jsx';
 import TehranMetroMap from './components/TehranMetroMap.jsx';
 import MetroEdgesTable from './components/MetroEdgesTable.jsx';
 import { pickRandomStations, getStationLabel, validateRoute, simulateEdgeEventsAndScore } from './components/utils.js';
@@ -36,6 +37,7 @@ export default function App() {
 
   const [score, setScore] = useState(null); // null until validation happens
 
+  const [navbarHeight, setNavbarHeight] = useState(0); // for sticky HUD positioning
 
   const showSplit = mode === 'play'; // restore 50/50 only in play mode
 
@@ -169,6 +171,24 @@ export default function App() {
       });
   }, []);
 
+  // Measure navbar height for sticky HUD positioning
+  useEffect(() => {
+    const el = document.getElementById('app-navbar');
+    if (!el) return;
+
+    const update = () => setNavbarHeight(el.getBoundingClientRect().height || 0);
+    update();
+
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+
+    window.addEventListener('resize', update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, []);
+
   // Load events
   useEffect(() => {
     API.listEvents()
@@ -264,60 +284,24 @@ export default function App() {
         onToggleLang={() => setLang((l) => (l === 'en' ? 'fa' : 'en'))}
       />
 
+      <PlayHud
+        mode={mode}
+        lang={lang}
+        navbarHeight={navbarHeight}
+        startStation={startStation}
+        destinationStation={destinationStation}
+        timeLeft={timeLeft}
+        visibleEdgeCount={visibleEdgeIds.length}
+        primaryButton={primaryButton}
+        validationResult={validationResult}
+        score={score}
+        getStationLabel={getStationLabel}
+      />
+
       <Container fluid className="py-4">
         <div style={{ padding: '0 16px' }}>
-          <div className="d-flex justify-content-between align-items-baseline flex-wrap gap-2 mt-2">
-            <div>
-              <div className="text-muted mt-2" style={{ fontSize: 14 }}>
-                <div>
-                  Start: <strong>{getStationLabel(startStation, lang)}</strong>
-                </div>
-                <div>
-                  Destination: <strong>{getStationLabel(destinationStation, lang)}</strong>
-                </div>
-              </div>
-            </div>
-
-            <div className="d-flex align-items-center gap-3 flex-wrap">
-              <div className="text-muted" style={{ fontSize: 12 }}>
-                selected edges: <strong>{visibleEdgeIds.length}</strong>
-              </div>
-
-              <div className="text-muted" style={{ fontSize: 12 }}>
-                time left: <strong>{mode === 'play' ? `${timeLeft}s` : '-'}</strong>
-              </div>
-
-              <button
-                type="button"
-                className={primaryButton.className}
-                onClick={primaryButton.onClick}
-                disabled={primaryButton.disabled}
-                title={primaryButton.title}
-              >
-                {primaryButton.label}
-              </button>
-            </div>
-          </div>
-
           <div className="mt-3">
             {metroError && <Alert variant="danger">{metroError}</Alert>}
-
-            {mode === 'validation' && validationResult && (
-              <Alert variant={validationResult.ok ? 'success' : 'danger'} className="mb-3">
-                <strong>{validationResult.ok ? 'Correct!' : 'Not valid'}</strong>
-                <div style={{ fontSize: 13, opacity: 0.9 }}>
-                  {validationResult.ok ? (
-                    <>
-                      Your route is valid. Score: <strong>{score ?? 0}</strong>
-                    </>
-                  ) : (
-                    <>
-                      Score: <strong>0</strong> — {validationResult.reason}
-                    </>
-                  )}
-                </div>
-              </Alert>
-            )}
 
             {!metroGraph ? (
               <div className="d-flex justify-content-center align-items-center" style={{ height: '60vh', minHeight: 520 }}>

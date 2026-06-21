@@ -48,7 +48,7 @@ export default function AppNavbar({
   );
 
   return (
-    <Navbar bg="dark" variant="dark" expand="lg" sticky="top">
+    <Navbar id="app-navbar" bg="dark" variant="dark" expand="lg" sticky="top">
       <Container>
         <Navbar.Brand href="#">Tehran Metro</Navbar.Brand>
 

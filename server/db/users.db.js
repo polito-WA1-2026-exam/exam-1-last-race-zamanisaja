@@ -21,9 +21,9 @@ async function seedUsersOnce(db) {
   }
 
   const users = [
-    { id: 'userid1', name: 'sadjad', email: 'sadjad@example.com', password: 'sadjad1234' },
-    { id: 'userid2', name: 'ali', email: 'ali@example.com', password: 'ali1234' },
-    { id: 'userid3', name: 'momo', email: 'momo@example.com', password: 'momo1234' },
+    { id: 'd3dce95d-ced2-47fb-a73a-dd255de85b31', name: 'sadjad', email: 'sadjad@example.com', password: 'sadjad1234' },
+    { id: '6052d233-68d2-4b36-af3c-82adc02e2324', name: 'ali', email: 'ali@example.com', password: 'ali1234' },
+    { id: 'f3b2c1d0-4e5f-4b6a-8c7d-8e9f0a1b2c3d', name: 'momo', email: 'momo@example.com', password: 'momo1234' },
   ];
 
   const insert = db.prepare('INSERT INTO users (id, name, email, hash) VALUES (?, ?, ?, ?)');

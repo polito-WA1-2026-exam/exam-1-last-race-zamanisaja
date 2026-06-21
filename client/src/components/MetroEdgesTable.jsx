@@ -1,13 +1,17 @@
 import { useMemo } from 'react';
 import { Table, Form, Badge } from 'react-bootstrap';
-import { SHOW_LINE_INFO } from '../config.js';
+import { GAME_LEVEL } from '../config.js';
 
+// level: 'easy'   – sorted edges, line column visible
+//        'medium' – sorted edges, line column hidden
+//        'hard'   – shuffled edges, line column hidden
 export default function MetroEdgesTable({
   graph,
   selectedEdgeIds,
   onToggleEdge,
   lang = 'fa',
-  showLineInfo = SHOW_LINE_INFO,
+  level = GAME_LEVEL,
+  showLineInfo = level === 'easy',
 }) {
   const nodeNameById = useMemo(() => {
     const m = new Map();
@@ -27,17 +31,25 @@ export default function MetroEdgesTable({
 
   const edges = useMemo(() => {
     const es = [...(graph?.edges ?? [])];
-    es.sort((a, b) => {
-      const la = a.line_id?.localeCompare(b.line_id ?? '') ?? 0;
-      if (la !== 0) return la;
+    if (level === 'hard') {
+      // Fisher-Yates shuffle
+      for (let i = es.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [es[i], es[j]] = [es[j], es[i]];
+      }
+    } else {
+      es.sort((a, b) => {
+        const la = a.line_id?.localeCompare(b.line_id ?? '') ?? 0;
+        if (la !== 0) return la;
 
-      const sa = (a.sort_order ?? 0) - (b.sort_order ?? 0);
-      if (sa !== 0) return sa;
+        const sa = (a.sort_order ?? 0) - (b.sort_order ?? 0);
+        if (sa !== 0) return sa;
 
-      return Number(a.id) - Number(b.id);
-    });
+        return Number(a.id) - Number(b.id);
+      });
+    }
     return es;
-  }, [graph]);
+  }, [graph, level]);
 
   const lineLabel = (l) =>
     lang === 'fa' ? (l?.name_fa ?? l?.name_en ?? '') : (l?.name_en ?? l?.name_fa ?? '');
@@ -90,10 +102,7 @@ export default function MetroEdgesTable({
 
                   <td>
                     <div style={{ fontWeight: 600 }}>
-                      {a} {lang === 'fa' ? '←' : '→'} {b}
-                    </div>
-                    <div className="text-muted" style={{ fontSize: 12 }}>
-                      id: {e.id} • sort: {e.sort_order ?? 0}
+                      {a} - {b}
                     </div>
                   </td>
                 </tr>

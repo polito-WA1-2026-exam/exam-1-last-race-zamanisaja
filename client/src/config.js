@@ -10,13 +10,16 @@ export const DEFAULT_TIMER = 20;
  * so you can test the UI without playing a real round.
  * Set to false for production / real gameplay.
  */
-export const TEST_MODE = false;
+export const TEST_MODE = true;
 
 export const START_STATION_ID = 'haghani';
 export const DESTINATION_STATION_ID = 'sohrevardi';
 
 /**
- * Show the Line column in the edges table.
- * Kept here so it travels together with the other UI flags.
+ * Game difficulty level.
+ * - 'easy'   – sorted edges, line column visible
+ * - 'medium' – sorted edges, line column hidden
+ * - 'hard'   – shuffled edges, line column hidden
  */
-export const SHOW_LINE_INFO = true;
+
+export const GAME_LEVEL = 'easy'; // 'easy' | 'medium' | 'hard'

@@ -1,7 +1,7 @@
 'use strict';
 
 const EVENTS = [
-  { code: 'E01', title_en: 'Unexpected closure',       title_fa: 'بسته شدن ناگهانی',   score: -4 },
+  { code: 'E01', title_en: 'Getting Robbed',            title_fa: 'دزدیده شدن',          score: -4 },
   { code: 'E02', title_en: 'Crowded platform',          title_fa: 'سکوی شلوغ',           score: -3 },
   { code: 'E03', title_en: 'Signal delay',              title_fa: 'تاخیر سیگنال',        score: -2 },
   { code: 'E04', title_en: 'Escalator outage',          title_fa: 'خرابی پله‌برقی',       score: -1 },

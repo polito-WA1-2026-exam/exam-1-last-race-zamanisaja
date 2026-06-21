@@ -28,7 +28,7 @@ export default function App() {
   // 'normal' | 'play' | 'validation'
   const [mode, setMode] = useState('normal');
 
-  const [lang, setLang] = useState('fa');
+  const [lang, setLang] = useState('en'); // 'en' | 'fa'
   const [timeLeft, setTimeLeft] = useState(DEFAULT_TIMER);
 
   const [startStation, setStartStation] = useState(null);

@@ -54,7 +54,7 @@ export default function PlayHud({
 
           <div className="d-flex align-items-center gap-3 flex-wrap">
             <div className="text-muted" style={{ fontSize: 12 }}>
-              selected edges: <strong>{mode === 'play' || mode === 'validation' ? visibleEdgeCount : 0}</strong>
+              selected segments: <strong>{mode === 'play' || mode === 'validation' ? visibleEdgeCount : 0}</strong>
             </div>
 
             <div

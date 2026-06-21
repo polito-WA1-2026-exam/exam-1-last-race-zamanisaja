@@ -142,7 +142,7 @@ export function validateRoute(graph, selectedEdgeIds, startStationId, destinatio
   if (!startStationId || !destinationStationId) return { ok: false, reason: 'Start/destination missing' };
 
   if (!Array.isArray(selectedEdgeIds) || selectedEdgeIds.length === 0) {
-    return { ok: false, reason: 'No edges selected' };
+    return { ok: false, reason: 'No segments selected' };
   }
 
   // (A) No duplicate edge IDs

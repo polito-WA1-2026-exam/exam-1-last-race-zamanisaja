@@ -43,23 +43,6 @@ function initEventsSchema(db) {
       score     INTEGER NOT NULL CHECK(score BETWEEN -4 AND 4),
       is_active INTEGER NOT NULL DEFAULT 1
     );
-
-    CREATE TABLE IF NOT EXISTS round_events (
-      id         INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id    TEXT NOT NULL,
-      round_id   TEXT NOT NULL,
-      event_code TEXT NOT NULL,
-      score      INTEGER NOT NULL CHECK(score BETWEEN -4 AND 4),
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-
-      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
-      FOREIGN KEY(event_code) REFERENCES events(code),
-
-      UNIQUE(round_id, event_code)
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_round_events_user  ON round_events(user_id);
-    CREATE INDEX IF NOT EXISTS idx_round_events_round ON round_events(round_id);
   `);
 }
 

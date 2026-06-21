@@ -241,10 +241,6 @@ function initMetroSchema(db) {
 }
 
 
-function canonicalEdge(a, b) {
-  return a < b ? [a, b] : [b, a];
-}
-
 /**
  * Idempotent metro seed:
  * - upserts lines + nodes
@@ -286,8 +282,7 @@ function seedMetro(db, metroSeed = TEHRAN_SEED) {
     `);
 
     for (const e of metroSeed.EDGES) {
-      const [from, to] = canonicalEdge(e.from_node_id, e.to_node_id);
-      insEdge.run(from, to, e.line_id, e.sort_order ?? 0);
+      insEdge.run(e.from_node_id, e.to_node_id, e.line_id, e.sort_order ?? 0);
     }
   });
 

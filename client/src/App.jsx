@@ -268,20 +268,6 @@ export default function App() {
         <div style={{ padding: '0 16px' }}>
           <div className="d-flex justify-content-between align-items-baseline flex-wrap gap-2 mt-2">
             <div>
-              <h1 className="h3 mb-1">Tehran Metro</h1>
-
-              <div className="text-muted">
-                {user ? (
-                  <>
-                    Logged in as <strong>{user.name}</strong>
-                  </>
-                ) : (
-                  <>
-                    Browsing as <strong>Guest</strong>
-                  </>
-                )}
-              </div>
-
               <div className="text-muted mt-2" style={{ fontSize: 14 }}>
                 <div>
                   Start: <strong>{getStationLabel(startStation, lang)}</strong>

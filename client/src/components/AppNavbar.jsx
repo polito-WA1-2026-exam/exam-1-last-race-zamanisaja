@@ -50,7 +50,7 @@ export default function AppNavbar({
   return (
     <Navbar bg="dark" variant="dark" expand="lg" sticky="top">
       <Container>
-        <Navbar.Brand href="#">My App</Navbar.Brand>
+        <Navbar.Brand href="#">Tehran Metro</Navbar.Brand>
 
         <Nav className="ms-auto align-items-center">
           <Navbar.Text className="me-3">
@@ -74,24 +74,23 @@ export default function AppNavbar({
           >
             {lang === 'fa' ? '🇮🇷' : 'US'}
           </Button>
+        <>
+          <Navbar.Text className="me-3">
+            Welcome, <strong>{user ? user.name : 'Guest'}</strong>!
+          </Navbar.Text>
 
           {user ? (
-            <>
-              <Navbar.Text className="me-3">
-                Welcome, <strong>{user.name}</strong>!
-              </Navbar.Text>
-              <Button variant="outline-light" size="sm" onClick={onLogout}>
-                Logout
-              </Button>
-            </>
+            <Button variant="outline-light" size="sm" onClick={onLogout}>
+              Logout
+            </Button>
           ) : (
-            // ✅ Step E: one button that opens the popover
             <OverlayTrigger trigger="click" placement="bottom-end" overlay={authPopover} rootClose>
               <Button variant="outline-light" size="sm">
                 Login
               </Button>
             </OverlayTrigger>
           )}
+        </>
         </Nav>
       </Container>
     </Navbar>

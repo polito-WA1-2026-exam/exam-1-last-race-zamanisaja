@@ -10,7 +10,7 @@ export default function App() {
   const [user, setUser] = useState(null); // null = not logged in
   const [checking, setChecking] = useState(true); // true while restoring session
 
-  const [recordsSummary, setRecordsSummary] = useState({ highScore: null, globalHighScore: null });
+  const [gamesSummary, setGamesSummary] = useState({ highScore: null, globalHighScore: null });
 
   const [metroGraph, setMetroGraph] = useState(null);
   const [metroError, setMetroError] = useState('');
@@ -114,7 +114,7 @@ export default function App() {
       } else {
         const { finalScore } = simulateEdgeEventsAndScore(snapshot, events, 20);
         setScore(finalScore);
-        // Save game record
+        // Save game score
         API.createGame({ score: finalScore })
       .then((r) => console.log('[client] score submitted', { finalScore, game_id: r.game_id }))
       .catch((e) => console.error('[client] submit failed', e));
@@ -134,9 +134,9 @@ export default function App() {
 
   // Navbar summary
   useEffect(() => {
-    API.getRecordsSummary()
-      .then(setRecordsSummary)
-      .catch(() => setRecordsSummary({ highScore: null, globalHighScore: null }));
+    API.getGamesSummary()
+      .then(setGamesSummary)
+      .catch(() => setGamesSummary({ highScore: null, globalHighScore: null }));
   }, [user]);
 
   // Load metro graph
@@ -237,7 +237,7 @@ export default function App() {
     <>
       <AppNavbar
         user={user}
-        summary={recordsSummary}
+        summary={gamesSummary}
         onLogout={handleLogout}
         onLogin={setUser}
         onRegister={setUser}

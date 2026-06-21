@@ -67,4 +67,6 @@ module.exports = {
   createGame: (data) => gameDb.createGame(db, data),
   getGameById: (game_id) => gameDb.getGameById(db, game_id),
   listGamesByOwner: (owner_type, owner_id, opts) => gameDb.listGamesByOwner(db, owner_type, owner_id, opts),
+  getHighGameScoreByOwner: (owner_type, owner_id) => gameDb.getHighGameScoreByOwner(db, owner_type, owner_id),
+  getGlobalHighGameScore: () => gameDb.getGlobalHighGameScore(db),
 };

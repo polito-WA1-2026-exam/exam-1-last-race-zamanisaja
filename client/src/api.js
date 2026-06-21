@@ -54,10 +54,21 @@ export const API = {
       if (!r.ok) throw new Error((await r.json()).error || 'Failed to save game');
       return r.json();
     }),
-    
+
   listGames: (limit) => {
     const qs = limit ? `?limit=${encodeURIComponent(limit)}` : '';
     return request('GET', `/api/games${qs}`);
+  },
+
+  getGamesSummary: async () => {
+    const r = await fetch('/api/games/summary', {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Failed to load game summary');
+    return data;
   },
 
 };

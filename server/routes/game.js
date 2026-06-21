@@ -2,7 +2,12 @@
 
 const express = require('express');
 const crypto = require('crypto');
-const { createGame, listGamesByOwner } = require('../db');
+const {
+  createGame,
+  listGamesByOwner,
+  getHighGameScoreByOwner,
+  getGlobalHighGameScore,
+} = require('../db');
 
 module.exports = function makeGameRouter({ getOwner }) {
   const router = express.Router();
@@ -43,6 +48,19 @@ module.exports = function makeGameRouter({ getOwner }) {
       return res.status(500).json({ error: 'Could not list games.' });
     }
   });
+
+  router.get('/games/summary', (req, res) => {
+    const { owner_type, owner_id } = getOwner(req, res);
+
+    try {
+        const highScore = getHighGameScoreByOwner(owner_type, owner_id);
+        const globalHighScore = getGlobalHighGameScore();
+        return res.json({ highScore, globalHighScore });
+    } catch (err) {
+        console.error('[games] summary failed', err);
+        return res.status(500).json({ error: 'Could not load game summary.' });
+    }
+    });
 
   return router;
 };

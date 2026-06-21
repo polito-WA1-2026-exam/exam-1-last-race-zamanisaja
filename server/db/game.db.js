@@ -48,9 +48,35 @@ function listGamesByOwner(db, owner_type, owner_id, { limit = 50 } = {}) {
     .all(owner_type, owner_id, limit);
 }
 
+function getHighGameScoreByOwner(db, owner_type, owner_id) {
+  const row = db
+    .prepare(
+      `SELECT MAX(score) AS highScore
+       FROM games
+       WHERE owner_type = ? AND owner_id = ?`
+    )
+    .get(owner_type, owner_id);
+
+  // row.highScore will be null if no games exist
+  return row?.highScore ?? null;
+}
+
+function getGlobalHighGameScore(db) {
+  const row = db
+    .prepare(
+      `SELECT MAX(score) AS globalHighScore
+       FROM games`
+    )
+    .get();
+
+  return row?.globalHighScore ?? null;
+}
+
 module.exports = {
   initGameSchema,
   createGame,
   getGameById,
   listGamesByOwner,
+  getHighGameScoreByOwner,
+  getGlobalHighGameScore,
 };

@@ -7,8 +7,6 @@ const { getOwner } = require('./owner');
 
 const router = express.Router();
 
-module.exports = router;
-
   router.post('/games', (req, res) => {
     const { owner_type, owner_id } = getOwner(req, res);
     const { score } = req.body ?? {};
@@ -65,3 +63,5 @@ module.exports = router;
       return res.status(500).json({ error: 'Could not load leaderboard.' });
     }
   });
+
+module.exports = router;

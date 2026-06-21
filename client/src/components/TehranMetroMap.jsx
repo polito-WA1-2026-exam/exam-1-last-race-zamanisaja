@@ -247,8 +247,8 @@ export default function TehranMetroMap({
 function isIntersectionNode(id) {
   return (
     id === 'darvazeh-dowlat' ||
-    id === 'teatr-e-shahr' ||
-    id === 'shahid-beheshti' ||
+    id === 'teatr-shahr' ||
+    id === 'beheshti' ||
     id === 'imam-khomeini' ||
     id === 'darvazeh-shemiran' ||
     id === 'shademan'

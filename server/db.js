@@ -3,7 +3,6 @@
 const Database = require('better-sqlite3');
 
 const usersDb = require('./db/users.db');
-const recordsDb = require('./db/records.db');
 const metroDb = require('./db/metro.db');
 const eventsDb = require('./db/events.db');
 const gameDb = require('./db/game.db');
@@ -20,7 +19,6 @@ db.pragma('foreign_keys = ON');
 
 // Initialize schema (each module owns its own CREATE TABLE statements)
 usersDb.initUsersSchema(db);
-recordsDb.initRecordsSchema(db);
 metroDb.initMetroSchema(db);
 eventsDb.initEventsSchema(db);
 gameDb.initGameSchema(db);
@@ -46,12 +44,6 @@ module.exports = {
   getUserByEmail: (email) => usersDb.getUserByEmail(db, email),
   getUserById: (id) => usersDb.getUserById(db, id),
   createUser: (data) => usersDb.createUser(db, data),
-
-  // Records
-  createRecord: (data) => recordsDb.createRecord(db, data),
-  listRecordsByOwner: (owner_type, owner_id) => recordsDb.listRecordsByOwner(db, owner_type, owner_id),
-  getHighScoreByOwner: (owner_type, owner_id) => recordsDb.getHighScoreByOwner(db, owner_type, owner_id),
-  getGlobalHighScore: () => recordsDb.getGlobalHighScore(db),
 
   // Metro
   getMetroGraph: () => metroDb.getMetroGraph(db),

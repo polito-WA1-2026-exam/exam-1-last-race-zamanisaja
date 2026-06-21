@@ -118,7 +118,7 @@ export default function App() {
 
     setScore(finalScore);
 
-    // Save game record (for both valid and invalid routes)
+    // Save game score (for both valid and invalid routes)
     API.createGame({ score: finalScore })
       .then((r) => {
         console.log('[client] score submitted', { finalScore, game_id: r.game_id });

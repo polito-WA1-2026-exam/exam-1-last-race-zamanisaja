@@ -21,12 +21,6 @@ const {
   getUserById,
   createUser,
 
-  // Records
-  createRecord,
-  listRecordsByOwner,
-  getHighScoreByOwner,
-  getGlobalHighScore,
-
   // Events
   listEvents,
  } = require('./db');
@@ -198,41 +192,6 @@ app.delete('/api/sessions/current', isLoggedIn, (req, res) => {
     if (err) return res.status(500).json({ error: 'Logout failed.' });
     res.json({ message: 'Logged out.' });
   });
-});
-
-// GET /api/records  →  list current owner's records (user or guest)
-app.get('/api/records', (req, res) => {
-  const { owner_type, owner_id } = getOwner(req, res);
-  const rows = listRecordsByOwner(owner_type, owner_id);
-  res.json(rows);
-});
-
-// POST /api/records  →  add a new numeric record for current owner
-app.post('/api/records', (req, res) => {
-  const { owner_type, owner_id } = getOwner(req, res);
-  const { value } = req.body ?? {};
-
-  const num = Number(value);
-  if (!Number.isFinite(num)) {
-    return res.status(422).json({ error: 'Value must be a finite number.' });
-  }
-
-  const ts = new Date().toISOString();
-  try {
-    const record_id = createRecord({ owner_type, owner_id, value: num, ts });
-    return res.status(201).json({ record_id, owner_type, owner_id, value: num, ts });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Could not create record.' });
-  }
-});
-
-// GET /api/records/summary → { highScore, globalHighScore }
-app.get('/api/records/summary', (req, res) => {
-  const { owner_type, owner_id } = getOwner(req, res);
-  const highScore = getHighScoreByOwner(owner_type, owner_id);
-  const globalHighScore = getGlobalHighScore();
-  res.json({ highScore, globalHighScore });
 });
 
 app.get('/api/metro/graph', (req, res) => {

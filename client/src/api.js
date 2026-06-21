@@ -29,11 +29,6 @@ export const API = {
   // Registration (auto-login server-side)
   register:   (name, email, password) => request('POST', '/api/users', { name, email, password }),
 
-  // Records
-  createRecord: (value) => request('POST', '/api/records', { value }),
-  listRecords:  ()      => request('GET',  '/api/records'),
-  getRecordsSummary: () => request('GET', '/api/records/summary'),
-
   // Metro
   getMetroGraph: () => request('GET', '/api/metro/graph'),
   listMetroEdges: (line_id) => {
@@ -45,30 +40,10 @@ export const API = {
   listEvents: () => request('GET', '/api/events'),
 
   // Games
-  createGame: ({ score }) =>
-    fetch('/api/games', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ score }),
-    }).then(async (r) => {
-      if (!r.ok) throw new Error((await r.json()).error || 'Failed to save game');
-      return r.json();
-    }),
-
+  createGame: ({ score }) => request('POST', '/api/games', { score }),
   listGames: (limit) => {
     const qs = limit ? `?limit=${encodeURIComponent(limit)}` : '';
     return request('GET', `/api/games${qs}`);
   },
-
-  getGamesSummary: async () => {
-    const r = await fetch('/api/games/summary', {
-      method: 'GET',
-      credentials: 'include',
-    });
-
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || 'Failed to load game summary');
-    return data;
-  },
-
+  getGamesSummary: () => request('GET', '/api/games/summary'),
 };

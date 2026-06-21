@@ -7,9 +7,6 @@ const metroDb = require('./db/metro.db');
 const eventsDb = require('./db/events.db');
 const gameDb = require('./db/game.db');
 
-// Seeds / static datasets
-const metroSeed = require('./db/tehran.l1-l4.seed');
-
 const DB_FILE = './db.sqlite';
 const db = new Database(DB_FILE);
 
@@ -27,7 +24,7 @@ metroDb.migrateMetroSchema(db);
 
 // Reference data seeding (explicit, called from server startup)
 function initReferenceData() {
-  metroDb.seedMetro(db, metroSeed);
+  metroDb.seedMetro(db);
   eventsDb.seedEvents(db, eventsDb.EVENTS);
   usersDb.seedUsersOnce(db)
 }

@@ -118,7 +118,7 @@ export default function App() {
     setSubmittedEdgeIds(snapshot);
     setSelectedEdgeIds([]);
 
-    const result = validateRoute(metroGraph, snapshot, startStation?.id, destinationStation?.id);
+    const result = validateRoute(metroGraph, snapshot, startStation?.id, destinationStation?.id, lang);
     setValidationResult(result);
 
     let finalScore = 0;
@@ -146,7 +146,7 @@ export default function App() {
       .catch((e) => console.error('[client] submit/refresh failed', e));
 
     setMode('validation');
-  }, [metroGraph, selectedEdgeIds, startStation?.id, destinationStation?.id, events]);
+  }, [metroGraph, selectedEdgeIds, startStation?.id, destinationStation?.id, lang, events]);
 
   // Release the guard when we leave validation mode (i.e., start a new round / go back)
   useEffect(() => {
@@ -253,55 +253,7 @@ export default function App() {
     }
   }
 
-  const primaryButton = (() => {
-    // Guests see a disabled Ready button with a tooltip
-    if (!user) {
-      return {
-        label: 'Ready',
-        className: 'btn btn-sm btn-success',
-        onClick: () => {},
-        disabled: true,
-        title: 'Please log in to play',
-      };
-    }
-    if (!metroGraph) {
-      return {
-        label: 'Ready',
-        className: 'btn btn-sm btn-success',
-        onClick: startRound,
-        disabled: true,
-        title: 'Metro graph not loaded yet',
-      };
-    }
 
-    if (mode === 'normal') {
-      return {
-        label: 'Ready',
-        className: 'btn btn-sm btn-success',
-        onClick: startRound,
-        disabled: false,
-        title: 'Start selecting edges',
-      };
-    }
-
-    if (mode === 'play') {
-      return {
-        label: 'Validate',
-        className: 'btn btn-sm btn-primary',
-        onClick: enterValidateMode,
-        disabled: selectedEdgeIds.length === 0,
-        title: 'Validate your route',
-      };
-    }
-
-    return {
-      label: 'Restart',
-      className: 'btn btn-sm btn-outline-secondary',
-      onClick: enterNormalMode,
-      disabled: false,
-      title: 'End this round and return to the full map',
-    };
-  })();
 
   if (checking) {
     return (
@@ -332,7 +284,12 @@ export default function App() {
         destinationStation={destinationStation}
         timeLeft={timeLeft}
         visibleEdgeCount={visibleEdgeIds.length}
-        primaryButton={primaryButton}
+        user={user}
+        metroGraph={metroGraph}
+        selectedEdgeCount={selectedEdgeIds.length}
+        onStartRound={startRound}
+        onValidate={enterValidateMode}
+        onRestart={enterNormalMode}
         validationResult={validationResult}
         score={score}
         roundEvents={roundEvents}

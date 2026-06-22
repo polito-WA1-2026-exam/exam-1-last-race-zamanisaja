@@ -8,7 +8,12 @@ export default function PlayHud({
   destinationStation,
   timeLeft,
   visibleEdgeCount,
-  primaryButton,
+  user,
+  metroGraph,
+  selectedEdgeCount,
+  onStartRound,
+  onValidate,
+  onRestart,
   validationResult,
   score,
   roundEvents,
@@ -20,6 +25,55 @@ export default function PlayHud({
 
   const showTimer = mode === 'play';
   const lowTime = showTimer && timeLeft <= 3;
+
+  const primaryButton = (() => {
+    if (!user) {
+      return {
+        label: lang === 'fa' ? 'برای بازی وارد شوید' : 'Please log in to play',
+        className: 'btn btn-sm btn-success',
+        onClick: () => {},
+        disabled: true,
+        title: lang === 'fa' ? 'برای بازی وارد شوید' : 'Please log in to play',
+      };
+    }
+    if (!metroGraph) {
+      return {
+        label: lang === 'fa' ? 'شروع' : 'Ready',
+        className: 'btn btn-sm btn-success',
+        onClick: onStartRound,
+        disabled: true,
+        title: lang === 'fa' ? 'نقشه مترو هنوز بارگذاری نشده' : 'Metro graph not loaded yet',
+      };
+    }
+
+    if (mode === 'normal') {
+      return {
+        label: lang === 'fa' ? 'شروع' : 'Ready',
+        className: 'btn btn-sm btn-success',
+        onClick: onStartRound,
+        disabled: false,
+        title: lang === 'fa' ? 'شروع به انتخاب قطعات' : 'Start selecting edges',
+      };
+    }
+
+    if (mode === 'play') {
+      return {
+        label: lang === 'fa' ? 'تأیید' : 'Validate',
+        className: 'btn btn-sm btn-primary',
+        onClick: onValidate,
+        disabled: selectedEdgeCount === 0,
+        title: lang === 'fa' ? 'تأیید مسیر' : 'Validate your route',
+      };
+    }
+
+    return {
+      label: lang === 'fa' ? 'شروع مجدد' : 'Restart',
+      className: 'btn btn-sm btn-outline-secondary',
+      onClick: onRestart,
+      disabled: false,
+      title: lang === 'fa' ? 'پایان دور و بازگشت به نقشه کامل' : 'End this round and return to the full map',
+    };
+  })();
 
   return (
     <div
@@ -45,16 +99,16 @@ export default function PlayHud({
         <div className="d-flex justify-content-between align-items-start flex-wrap gap-2">
           <div className="text-muted" style={{ fontSize: 14 }}>
             <div>
-              Start: <strong>{hasStations ? getStationLabel(startStation, lang) : '—'}</strong>
+              {lang === 'fa' ? 'مبدا:' : 'Start:'} <strong>{hasStations ? getStationLabel(startStation, lang) : '—'}</strong>
             </div>
             <div>
-              Destination: <strong>{hasStations ? getStationLabel(destinationStation, lang) : '—'}</strong>
+              {lang === 'fa' ? 'مقصد:' : 'Destination:'} <strong>{hasStations ? getStationLabel(destinationStation, lang) : '—'}</strong>
             </div>
           </div>
 
           <div className="d-flex align-items-center gap-3 flex-wrap">
             <div className="text-muted" style={{ fontSize: 12 }}>
-              selected segments: <strong>{mode === 'play' || mode === 'validation' ? visibleEdgeCount : 0}</strong>
+              {lang === 'fa' ? 'قطعات انتخاب‌شده:' : 'selected segments:'} <strong>{mode === 'play' || mode === 'validation' ? visibleEdgeCount : 0}</strong>
             </div>
 
             <div
@@ -64,7 +118,7 @@ export default function PlayHud({
                 color: lowTime ? '#b02a37' : undefined,
               }}
             >
-              time left: <strong>{showTimer ? `${timeLeft}s` : '-'}</strong>
+              {lang === 'fa' ? 'زمان باقی‌مانده:' : 'time left:'} <strong>{showTimer ? `${timeLeft}s` : '-'}</strong>
             </div>
 
             <button
@@ -91,7 +145,7 @@ export default function PlayHud({
             boxShadow: '0 6px 18px rgba(0,0,0,0.06)',
           }}
         >
-          <strong>{validationResult.ok ? 'Correct!' : 'Not valid'}</strong>
+          <strong>{validationResult.ok ? (lang === 'fa' ? 'درست!' : 'Correct!') : (lang === 'fa' ? 'نامعتبر' : 'Not valid')}</strong>
           <div style={{ fontSize: 13, opacity: 0.9 }}>
             {validationResult.ok ? (
               <>

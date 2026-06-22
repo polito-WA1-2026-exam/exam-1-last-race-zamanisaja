@@ -57,14 +57,14 @@ export default function AppNavbar({
 
         <Nav className="ms-auto align-items-center">
           <Navbar.Text className="me-3">
-            High score: <strong>{summary?.highScore ?? '—'}</strong>
+            {lang === 'fa' ? 'بهترین امتیاز:' : 'High score:'} <strong>{summary?.highScore ?? '—'}</strong>
             <LeaderboardPopover leaderboard={leaderboard}>
               <span
                 className="ms-2 text"
                 style={{ cursor: 'pointer', textDecoration: 'underline dotted' }}
                 title="View leaderboard"
               >
-                (Global: {summary?.globalHighScore ?? '—'})
+                ({lang === 'fa' ? 'جهانی:' : 'Global:'} {summary?.globalHighScore ?? '—'})
               </span>
             </LeaderboardPopover>
           </Navbar.Text>
@@ -87,7 +87,7 @@ export default function AppNavbar({
           </Button>
         <>
           <Navbar.Text className="me-3">
-            Welcome <strong>{user ? user.name : ''}</strong>!
+            {lang === 'fa' ? 'خوش آمدید' : 'Welcome'} <strong>{user ? user.name : ''}</strong>!
           </Navbar.Text>
 
           {user ? (

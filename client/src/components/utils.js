@@ -137,32 +137,35 @@ function computeInterchanges(graph) {
  *   routeNodeIds?: string[],
  * }
  */
-export function validateRoute(graph, selectedEdgeIds, startStationId, destinationStationId) {
-  if (!graph) return { ok: false, reason: 'Graph missing' };
-  if (!startStationId || !destinationStationId) return { ok: false, reason: 'Start/destination missing' };
+export function validateRoute(graph, selectedEdgeIds, startStationId, destinationStationId, lang = 'en') {
+  const t = (en, fa) => lang === 'fa' ? fa : en;
+
+  if (!graph) return { ok: false, reason: t('Graph missing', 'نقشه در دسترس نیست') };
+  if (!startStationId || !destinationStationId)
+    return { ok: false, reason: t('Start/destination missing', 'ایستگاه مبدا یا مقصد مشخص نشده') };
 
   if (!Array.isArray(selectedEdgeIds) || selectedEdgeIds.length === 0) {
-    return { ok: false, reason: 'No segments selected' };
+    return { ok: false, reason: t('No segments selected', 'هیچ مسیری انتخاب نشده') };
   }
 
   // (A) No duplicate edge IDs
   const idSet = new Set(selectedEdgeIds);
   if (idSet.size !== selectedEdgeIds.length) {
-    return { ok: false, reason: 'A segment was selected more than once' };
+    return { ok: false, reason: t('A segment was selected more than once', 'یک مسیر بیش از یک بار انتخاب شده') };
   }
 
   // (B) All edges exist
   const edgeById = new Map((graph.edges || []).map((e) => [e.id, e]));
   const chosenEdges = selectedEdgeIds.map((id) => edgeById.get(id)).filter(Boolean);
   if (chosenEdges.length !== selectedEdgeIds.length) {
-    return { ok: false, reason: 'Some selected edges do not exist in the graph' };
+    return { ok: false, reason: t('Some selected edges do not exist in the graph', 'برخی مسیرهای انتخاب‌شده در نقشه وجود ندارند') };
   }
 
   // (C) No duplicate physical segments (in case the dataset ever has parallel IDs)
   const segSet = new Set();
   for (const e of chosenEdges) {
     const k = keyUndirected(e.from_node_id, e.to_node_id);
-    if (segSet.has(k)) return { ok: false, reason: 'Route contains the same segment more than once' };
+    if (segSet.has(k)) return { ok: false, reason: t('Route contains the same segment more than once', 'مسیر شامل یک قطعه تکراری است') };
     segSet.add(k);
   }
 
@@ -177,9 +180,10 @@ export function validateRoute(graph, selectedEdgeIds, startStationId, destinatio
     edgesByNode.get(e.to_node_id).push(e);
   }
 
-  if (!edgesByNode.has(startStationId)) return { ok: false, reason: 'Selected route does not touch the start station' };
+  if (!edgesByNode.has(startStationId))
+    return { ok: false, reason: t('Selected route does not touch the start station', 'مسیر انتخاب‌شده از ایستگاه مبدا عبور نمی‌کند') };
   if (!edgesByNode.has(destinationStationId))
-    return { ok: false, reason: 'Selected route does not touch the destination station' };
+    return { ok: false, reason: t('Selected route does not touch the destination station', 'مسیر انتخاب‌شده به ایستگاه مقصد نمی‌رسد') };
 
   // Depth-first search / backtracking to find an ordering that uses each selected edge once
   const used = new Set(); // edge.id
@@ -253,8 +257,14 @@ export function validateRoute(graph, selectedEdgeIds, startStationId, destinatio
     return {
       ok: false,
       reason: reachable
-        ? 'A path from start to destination exists among your segments, but not all selected segments can be used exactly once — you may have selected extra or redundant segments.'
-        : 'Selected segments cannot form a continuous route from start to destination under the line-change rules.',
+        ? t(
+            'A path from start to destination exists among your segments, but not all selected segments can be used exactly once — you may have selected extra or redundant segments.',
+            'مسیری از مبدا به مقصد وجود دارد، اما نمی‌توان همه قطعات انتخاب‌شده را دقیقاً یک بار استفاده کرد — احتمالاً قطعات اضافی یا تکراری انتخاب کرده‌اید.'
+          )
+        : t(
+            'Selected segments cannot form a continuous route from start to destination under the line-change rules.',
+            'قطعات انتخاب‌شده نمی‌توانند با رعایت قوانین تغییر خط، مسیری پیوسته از مبدا به مقصد تشکیل دهند.'
+          ),
     };
   }
 }

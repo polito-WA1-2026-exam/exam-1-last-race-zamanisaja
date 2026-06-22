@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { pickRandomStations, validateRoute, simulateEdgeEventsAndScore } from '../components/utils.js';
+import { pickRandomStations } from '../components/utils.js';
 import { API } from '../api.js';
 import { DEFAULT_TIMER } from '../config.js';
 
-export function useGameLogic({ user, metroGraph, events, lang, setMetroError, setGamesSummary, setLeaderboard }) {
+export function useGameLogic({ user, metroGraph, lang, setMetroError, setGamesSummary, setLeaderboard }) {
   // Prevent double-submit (can happen in React StrictMode / racing timer)
   const validatingRef = useRef(false);
 
@@ -35,24 +35,17 @@ export function useGameLogic({ user, metroGraph, events, lang, setMetroError, se
     if (mode !== 'play') return;
     setSelectedEdgeIds((prev) => {
       const s = new Set(prev);
-      if (s.has(edgeId)) s.delete(edgeId);
-      else s.add(edgeId);
+      s.has(edgeId) ? s.delete(edgeId) : s.add(edgeId);
       return Array.from(s);
     });
   }
 
-  function startRound() {
-    if (!user) return;
-    if (!metroGraph) return;
-
+  const startRound = useCallback(() => {
+    if (!user || !metroGraph) return;
     setScore(null);
 
     const pair = pickRandomStations(metroGraph, 3);
-    if (!pair) {
-      setMetroError('Could not find two stations at least 3 stations apart.');
-      return;
-    }
-
+    if (!pair) { setMetroError('Could not find two stations at least 3 apart.'); return; }
     setMetroError('');
     setValidationResult(null);
     setSelectedEdgeIds([]);
@@ -61,9 +54,9 @@ export function useGameLogic({ user, metroGraph, events, lang, setMetroError, se
     setDestinationStation(pair.destination);
     setTimeLeft(DEFAULT_TIMER);
     setMode('play');
-  }
+  }, [user, metroGraph, setMetroError]);
 
-  function enterSetupMode() {
+  const enterSetupMode = useCallback(() => {
     setMode('setup');
     setTimeLeft(DEFAULT_TIMER);
     setSelectedEdgeIds([]);
@@ -74,83 +67,55 @@ export function useGameLogic({ user, metroGraph, events, lang, setMetroError, se
     setMetroError('');
     setScore(null);
     setRoundEvents([]);
-  }
+  }, [setMetroError]);
 
-  const enterValidateMode = useCallback(() => {
-    if (!metroGraph) return;
-
-    // Guard: can be triggered by timer + click, or dev StrictMode quirks
-    if (validatingRef.current) return;
+  // Async: sends route data to the server; receives validation result + score back
+  const enterValidateMode = useCallback(async () => {
+    if (!metroGraph || validatingRef.current) return;
     validatingRef.current = true;
 
+    const snapshot = [...selectedEdgeIdsRef.current];
+    setSubmittedEdgeIds(snapshot);
+    setSelectedEdgeIds([]);
+
     try {
-      const snapshot = [...selectedEdgeIdsRef.current];
+      const result = await API.createGame({
+        startStationId:       startStation?.id,
+        destinationStationId: destinationStation?.id,
+        selectedEdgeIds:      snapshot,
+      });
 
-      setSubmittedEdgeIds(snapshot);
-      setSelectedEdgeIds([]);
+      setValidationResult({ ok: result.valid, reasonCode: result.reasonCode ?? undefined });
+      setScore(result.score);
+      setRoundEvents(result.triggeredEvents ?? []);
 
-      const result = validateRoute(metroGraph, snapshot, startStation?.id, destinationStation?.id, lang);
-
-      if (!result) {
-        console.error('[enterValidateMode] validateRoute returned undefined — check utils.js');
-        validatingRef.current = false;
-        return;
-      }
-
-      setValidationResult(result);
-
-      let finalScore = 0;
-
-      if (result.ok) {
-        if (!events.length) {
-          finalScore = 20;
-        } else {
-          const sim = simulateEdgeEventsAndScore(snapshot, events, 20);
-          finalScore = sim.finalScore;
-          setRoundEvents(sim.triggeredEvents ?? []);
-        }
-      }
-
-      setScore(finalScore);
-
-      // Save game score (for both valid and invalid routes)
-      API.createGame({ score: finalScore })
-        // Refresh navbar summary so it updates immediately after a new high score
-        .then(() => Promise.all([API.getGamesSummary(), API.getLeaderboard()]))
-        .then(([summary, lb]) => {
-          setGamesSummary(summary);
-          setLeaderboard(lb);
-        })
-        .catch((e) => console.error('[client] submit/refresh failed', e));
-
-      setMode('validation');
+      Promise.all([API.getGamesSummary(), API.getLeaderboard()])
+        .then(([summary, lb]) => { setGamesSummary(summary); setLeaderboard(lb); })
+        .catch((e) => console.error('[useGameLogic] refresh failed', e));
     } catch (err) {
-      console.error('[enterValidateMode] unexpected error, releasing guard', err);
-      validatingRef.current = false;
+      console.error('[enterValidateMode] API error', err);
+      setValidationResult({ ok: false, reason: err.message ?? 'Server error. Please try again.' });
+      setScore(0);
+    } finally {
+      setMode('validation');
     }
-  }, [metroGraph, startStation?.id, destinationStation?.id, lang, events, setGamesSummary, setLeaderboard]);
+  }, [metroGraph, startStation?.id, destinationStation?.id, setGamesSummary, setLeaderboard]);
 
-  // Release the guard when we leave play mode (i.e., start a new round / go back)
   useEffect(() => {
     if (mode !== 'play') validatingRef.current = false;
   }, [mode]);
 
-  // Countdown: pure tick, no side-effects inside the state updater
+  // Countdown timer
   useEffect(() => {
     if (mode !== 'play') return;
-
-    const intervalId = setInterval(() => {
+    const id = setInterval(() => {
       setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(intervalId);
-          return 0; // just set to 0; validation triggered by the effect below
-        }
+        if (prev <= 1) { clearInterval(id); return 0; }
         return prev - 1;
       });
     }, 1000);
-
-    return () => clearInterval(intervalId);
-  }, [mode]); // no enterValidateMode dep — clicking edges won't restart the interval
+    return () => clearInterval(id);
+  }, [mode]);
 
   // Trigger validation once the timer actually reaches 0
   useEffect(() => {

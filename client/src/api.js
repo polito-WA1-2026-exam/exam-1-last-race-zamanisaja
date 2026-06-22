@@ -39,8 +39,9 @@ export const API = {
   // Events
   listEvents: () => request('GET', '/api/events'),
 
-  // Games
-  createGame: ({ score }) => request('POST', '/api/games', { score }),
+  // Games — client submits route data; server validates and scores
+  createGame: ({ startStationId, destinationStationId, selectedEdgeIds }) =>
+    request('POST', '/api/games', { startStationId, destinationStationId, selectedEdgeIds }),
   listGames: (limit) => {
     const qs = limit ? `?limit=${encodeURIComponent(limit)}` : '';
     return request('GET', `/api/games${qs}`);

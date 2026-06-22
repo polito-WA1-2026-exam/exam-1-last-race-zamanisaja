@@ -1,12 +1,19 @@
 'use strict';
 
-const express = require('express');
-const crypto  = require('crypto');
-const { createGame, listGamesByUser, getHighGameScoreByUser, getGlobalHighGameScore, getTopScores } = require('../db');
-const { isLoggedIn } = require('./auth');
+const express  = require('express');
+const crypto   = require('crypto');
+const {
+  createGame, listGamesByUser, getHighGameScoreByUser,
+  getGlobalHighGameScore, getTopScores, getMetroGraph, listEvents,
+} = require('../db');
+const { isLoggedIn }                = require('./auth');
+const { validateRoute, scoreRoute } = require('../utils');
 
 const router = express.Router();
 
+// POST /api/games
+// Body: { startStationId, destinationStationId, selectedEdgeIds }
+// Server validates the route and computes the score — the client never touches scoring logic.
 router.post('/games', isLoggedIn, (req, res) => {
   const user_id = req.user.user_id;
   const { startStationId, destinationStationId, selectedEdgeIds } = req.body ?? {};
@@ -40,55 +47,58 @@ router.post('/games', isLoggedIn, (req, res) => {
   let triggeredEvents = [];
 
   if (result.ok) {
-    const events = listEvents({ activeOnly: true });
+    const events = listEvents();
     ({ finalScore, triggeredEvents } = scoreRoute(result.routeEdgeIds, events));
   }
 
   const game_id = crypto.randomUUID();
 
-    try {
-      createGame({ game_id, user_id, score: intScore });
-      return res.status(201).json({ game_id, user_id, score: intScore });
-    } catch (err) {
-      console.error('[games] save failed', err);
-      return res.status(500).json({ error: 'Could not save game.' });
-    }
-  });
+  try {
+    createGame({ game_id, user_id, score: finalScore });
+    return res.status(201).json({
+      game_id,
+      score:          finalScore,
+      valid:          result.ok,
+      reasonCode:     result.reasonCode,
+      triggeredEvents,              // event scores only revealed here, after the round ends
+    });
+  } catch (err) {
+    console.error('[games] save failed', err);
+    return res.status(500).json({ error: 'Could not save game.' });
+  }
+});
 
-  router.get('/games', isLoggedIn, (req, res) => {
-    const user_id = req.user.user_id;
-    const limit = req.query.limit ? Math.max(1, Math.min(200, Number(req.query.limit))) : 50;
+router.get('/games', isLoggedIn, (req, res) => {
+  const user_id = req.user.user_id;
+  const limit   = req.query.limit ? Math.max(1, Math.min(200, Number(req.query.limit))) : 50;
+  try {
+    return res.json(listGamesByUser(user_id, { limit }));
+  } catch (err) {
+    console.error('[games] list failed', err);
+    return res.status(500).json({ error: 'Could not list games.' });
+  }
+});
 
-    try {
-      const rows = listGamesByUser(user_id, { limit });
-      return res.json(rows);
-    } catch (err) {
-      console.error('[games] list failed', err);
-      return res.status(500).json({ error: 'Could not list games.' });
-    }
-  });
+router.get('/games/summary', isLoggedIn, (req, res) => {
+  const user_id = req.user.user_id;
+  try {
+    return res.json({
+      highScore:       getHighGameScoreByUser(user_id),
+      globalHighScore: getGlobalHighGameScore(),
+    });
+  } catch (err) {
+    console.error('[games] summary failed', err);
+    return res.status(500).json({ error: 'Could not load game summary.' });
+  }
+});
 
-  router.get('/games/summary', isLoggedIn, (req, res) => {
-    const user_id = req.user.user_id;
-
-    try {
-        const highScore = getHighGameScoreByUser(user_id);
-        const globalHighScore = getGlobalHighGameScore();
-        return res.json({ highScore, globalHighScore });
-    } catch (err) {
-        console.error('[games] summary failed', err);
-        return res.status(500).json({ error: 'Could not load game summary.' });
-    }
-  });
-
-  router.get('/games/leaderboard', isLoggedIn, (req, res) => {
-    try {
-      const rows = getTopScores(3);
-      return res.json(rows);
-    } catch (err) {
-      console.error('[games] leaderboard failed', err);
-      return res.status(500).json({ error: 'Could not load leaderboard.' });
-    }
-  });
+router.get('/games/leaderboard', isLoggedIn, (req, res) => {
+  try {
+    return res.json(getTopScores(3));
+  } catch (err) {
+    console.error('[games] leaderboard failed', err);
+    return res.status(500).json({ error: 'Could not load leaderboard.' });
+  }
+});
 
 module.exports = router;

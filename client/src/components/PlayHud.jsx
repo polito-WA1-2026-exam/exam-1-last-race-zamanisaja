@@ -1,5 +1,18 @@
 import { Alert } from 'react-bootstrap';
 
+const REASON_LABELS = {
+  NO_SEGMENTS:          { en: 'No segments selected.',                                          fa: 'هیچ قطعه‌ای انتخاب نشده است.' },
+  DUPLICATE_SEGMENT:    { en: 'You selected the same segment more than once.',                  fa: 'یک قطعه را بیش از یک بار انتخاب کرده‌اید.' },
+  UNKNOWN_EDGE:         { en: 'One or more segments are not part of this metro network.',        fa: 'یک یا چند قطعه در این شبکه مترو وجود ندارند.' },
+  MISSING_START:        { en: 'Your route does not include the start station.',                  fa: 'مسیر شما ایستگاه مبدا را در بر نمی‌گیرد.' },
+  MISSING_DESTINATION:  { en: 'Your route does not reach the destination station.',              fa: 'مسیر شما به ایستگاه مقصد نمی‌رسد.' },
+  EXTRA_SEGMENTS:       { en: 'A valid path exists, but you included extra or redundant segments.', fa: 'مسیر معتبری وجود دارد، اما قطعات اضافه یا تکراری انتخاب کرده‌اید.' },
+  NO_ROUTE:             { en: 'Selected segments cannot form a continuous route under line-change rules.', fa: 'قطعات انتخاب‌شده نمی‌توانند مسیر پیوسته‌ای طبق قوانین تعویض خط تشکیل دهند.' },
+  GRAPH_MISSING:        { en: 'Metro data is not available. Please try again.',                 fa: 'داده‌های مترو در دسترس نیستند. لطفاً دوباره تلاش کنید.' },
+  MISSING_ENDPOINTS:    { en: 'Start or destination station is missing.',                       fa: 'ایستگاه مبدا یا مقصد مشخص نشده است.' },
+  SUCCESS:              { en: 'Your route is valid!',                                           fa: 'مسیر شما معتبر است!' },
+};
+
 export default function PlayHud({
   mode,
   lang,
@@ -149,21 +162,27 @@ export default function PlayHud({
           <div style={{ fontSize: 13, opacity: 0.9 }}>
             {validationResult.ok ? (
               <>
-                <div>Your route is valid. Score: <strong>{score ?? 0}</strong></div>
+                <div>{REASON_LABELS.SUCCESS[lang]} {lang === 'fa' ? 'امتیاز:' : 'Score:'} <strong>{score ?? 0}</strong></div>
                 {roundEvents && roundEvents.length > 0 && (
                   <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 12 }}>
                     {roundEvents.map((ev, i) => (
-                      <li key={i} style={{ color: ev.eventScore > 0 ? '#198754' : ev.eventScore < 0 ? '#b02a37' : 'inherit' }}>
-                        {lang === 'fa' ? ev.title_fa : ev.title_en}
-                        {' '}
+                      <li key={i} dir="ltr" style={{ color: ev.eventScore > 0 ? '#198754' : ev.eventScore < 0 ? '#b02a37' : 'inherit' }}>
                         <strong>({ev.eventScore > 0 ? '+' : ''}{ev.eventScore})</strong>
+                        {' '}
+                        {lang === 'fa' ? ev.title_fa : ev.title_en}
                       </li>
                     ))}
                   </ul>
                 )}
               </>
             ) : (
-              <>Score: <strong>0</strong> — {validationResult.reason}</>
+              <>
+                {lang === 'fa' ? 'امتیاز:' : 'Score:'} <strong>{score ?? 0}</strong>
+                <div style={{ marginTop: 4 }}>
+                  {REASON_LABELS[validationResult.reasonCode]?.[lang]
+                    ?? (lang === 'fa' ? 'مسیر انتخابی معتبر نیست.' : 'Your route is not valid.')}
+                </div>
+              </>
             )}
           </div>
         </Alert>

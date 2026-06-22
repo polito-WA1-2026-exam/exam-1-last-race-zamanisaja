@@ -1,0 +1,29 @@
+{
+  "name": "WA1-2026-exam",
+  "version": "1.0.0",
+  "description": "A starter project built with React 19 + Node 24 + Express + SQLite + Passport.js.",
+  "main": "index.js",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently \"cd server && npx nodemon index.js\" \"cd client && npm run dev\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/polito-WA1-2026-exam/exam-1-last-race-zamanisaja.git"
+  },
+  "keywords": [],
+  "author": "Sadjad Zamani",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/polito-WA1-2026-exam/exam-1-last-race-zamanisaja/issues"
+  },
+  "homepage": "https://github.com/polito-WA1-2026-exam/exam-1-last-race-zamanisaja#readme"
+}

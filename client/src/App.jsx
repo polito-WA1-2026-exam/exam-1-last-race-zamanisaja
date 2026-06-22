@@ -173,6 +173,13 @@ export default function App() {
       .catch(() => setGamesSummary({ highScore: null, globalHighScore: null }));
   }, [user]);
 
+  // Leaderboard
+  useEffect(() => {
+    API.getLeaderboard()
+      .then(setLeaderboard)
+      .catch(() => setLeaderboard([]));
+  }, [user]);
+
   // Load metro graph
   useEffect(() => {
     if (!user) {

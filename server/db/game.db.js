@@ -14,6 +14,16 @@ function initGameSchema(db) {
   `);
 }
 
+ function seedDefaultGames(db) {
+    const insert = db.prepare(`
+    INSERT OR IGNORE INTO games (game_id, user_id, score, created_at)
+    VALUES (?, ?, ?, ?)
+  `);
+
+  insert.run('56ea2a9a-d114-4835-8f39-d42e4d200260', 'd3dce95d-ced2-47fb-a73a-dd255de85b31', 21, '2026-06-21 23:38:38'); // sadjad
+  insert.run('17a7a0f4-3b09-4318-9195-3dd31a0f3544', 'f3b2c1d0-4e5f-4b6a-8c7d-8e9f0a1b2c3d', 23, '2026-06-21 23:40:40'); // momo
+}
+
 function createGame(db, { game_id, user_id, score }) {
   const info = db
     .prepare(
@@ -87,6 +97,7 @@ function getTopScores(db, limit = 3) {
 
 module.exports = {
   initGameSchema,
+  seedDefaultGames,
   createGame,
   getGameById,
   listGamesByUser,

@@ -60,7 +60,7 @@ app.use('/api',        gameRouter);
 // ── Start ─────────────────────────────────────────────────────────────────────
 (async () => {
   try {
-    initReferenceData();
+    await initReferenceData();
     app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
   } catch (err) {
     console.error('Failed to init database:', err);

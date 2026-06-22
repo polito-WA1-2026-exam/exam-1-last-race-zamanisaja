@@ -23,10 +23,11 @@ gameDb.initGameSchema(db);
 metroDb.migrateMetroSchema(db);
 
 // Reference data seeding (explicit, called from server startup)
-function initReferenceData() {
+async function initReferenceData() {
   metroDb.seedMetro(db);
   eventsDb.seedEvents(db, eventsDb.EVENTS);
-  usersDb.seedUsersOnce(db)
+  await usersDb.seedUsersOnce(db);
+  gameDb.seedDefaultGames(db);
 }
 
 
@@ -51,6 +52,7 @@ module.exports = {
 
   // Games (export when you’re ready to use it)
   createGame: (data) => gameDb.createGame(db, data),
+  seedDefaultGames: () => gameDb.seedDefaultGames(db),
   getGameById: (game_id) => gameDb.getGameById(db, game_id),
   listGamesByUser: (user_id, opts) => gameDb.listGamesByUser(db, user_id, opts),
   getHighGameScoreByUser: (user_id) => gameDb.getHighGameScoreByUser(db, user_id),

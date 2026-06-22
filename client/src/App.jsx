@@ -38,7 +38,7 @@ export default function App() {
     visibleEdgeIds,
     toggleEdge,
     startRound,
-    enterNormalMode,
+    enterSetupMode,
     enterValidateMode,
   } = useGameLogic({ user, metroGraph, lang, setMetroError, setGamesSummary, setLeaderboard });
 
@@ -112,7 +112,7 @@ export default function App() {
       await API.logout();
     } finally {
       setUser(null);
-      enterNormalMode();
+      enterSetupMode();
     }
   }
 
@@ -152,7 +152,7 @@ export default function App() {
         selectedEdgeCount={selectedEdgeIds.length}
         onStartRound={startRound}
         onValidate={enterValidateMode}
-        onRestart={enterNormalMode}
+        onRestart={enterSetupMode}
         validationResult={validationResult}
         score={score}
         roundEvents={roundEvents}

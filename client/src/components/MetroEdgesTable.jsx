@@ -56,15 +56,7 @@ export default function MetroEdgesTable({
         [es[i], es[j]] = [es[j], es[i]];
       }
     } else {
-      es.sort((a, b) => {
-        const la = a.line_id?.localeCompare(b.line_id ?? '') ?? 0;
-        if (la !== 0) return la;
-
-        const sa = (a.sort_order ?? 0) - (b.sort_order ?? 0);
-        if (sa !== 0) return sa;
-
-        return Number(a.id) - Number(b.id);
-      });
+      es.sort((a, b) => Number(a.id) - Number(b.id));
     }
     return es;
   }, [graph, level]);

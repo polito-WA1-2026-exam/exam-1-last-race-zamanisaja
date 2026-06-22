@@ -36,7 +36,7 @@ async function seedUsersOnce(db) {
 }
 
 function getUserByEmail(db, email) {
-  return db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  return db.prepare('SELECT user_id, name, email, hash FROM users WHERE email = ?').get(email);
 }
 
 function getUserById(db, user_id) {

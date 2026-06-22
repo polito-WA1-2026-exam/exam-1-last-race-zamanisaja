@@ -13,7 +13,7 @@ function buildAdjacency(graph) {
   const adj = new Map();
 
   for (const node of graph.nodes || []) {
-    if (node.type === 'station') adj.set(node.id, []);
+    adj.set(node.id, []);
   }
 
   for (const edge of graph.edges || []) {
@@ -58,8 +58,8 @@ export function pickRandomStations(graph, minDistance = 3, attemptLimit = 200) {
   if (TEST_MODE) {
     if (!graph?.nodes) return null;
 
-    const start = graph.nodes.find((n) => n.id === START_STATION_ID && n.type === 'station');
-    const destination = graph.nodes.find((n) => n.id === DESTINATION_STATION_ID && n.type === 'station');
+    const start = graph.nodes.find((n) => n.id === START_STATION_ID);
+    const destination = graph.nodes.find((n) => n.id === DESTINATION_STATION_ID);
 
     if (!start || !destination) return null;
     return { start, destination };
@@ -67,7 +67,7 @@ export function pickRandomStations(graph, minDistance = 3, attemptLimit = 200) {
 
   if (!graph?.nodes || !graph?.edges) return null;
 
-  const stations = graph.nodes.filter((n) => n.type === 'station');
+  const stations = graph.nodes;
   if (stations.length < 2) return null;
 
   for (let attempt = 0; attempt < attemptLimit; attempt += 1) {

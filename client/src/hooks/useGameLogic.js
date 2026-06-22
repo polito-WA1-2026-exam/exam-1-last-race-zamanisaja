@@ -14,9 +14,8 @@ export function useGameLogic({ user, metroGraph, events, lang, setMetroError, se
   // without needing selectedEdgeIds as a useCallback dependency (which restarts the interval on every click)
   const selectedEdgeIdsRef = useRef(selectedEdgeIds);
   useEffect(() => { selectedEdgeIdsRef.current = selectedEdgeIds; }, [selectedEdgeIds]);
-
-  // 'normal' | 'play' | 'validation'
-  const [mode, setMode] = useState('normal');
+  // 'setup' | 'play' | 'validation'
+  const [mode, setMode] = useState('setup');
   const [timeLeft, setTimeLeft] = useState(DEFAULT_TIMER);
 
   const [startStation, setStartStation] = useState(null);
@@ -29,7 +28,7 @@ export function useGameLogic({ user, metroGraph, events, lang, setMetroError, se
 
   const showSplit = mode === 'play'; // restore 50/50 only in play mode
 
-  // Map should see submitted edges in validation, live edges in play (normal shows all anyway)
+  // Map should see submitted edges in validation, live edges in play (setup shows all anyway)
   const visibleEdgeIds = mode === 'validation' ? submittedEdgeIds : selectedEdgeIds;
 
   function toggleEdge(edgeId) {
@@ -64,8 +63,8 @@ export function useGameLogic({ user, metroGraph, events, lang, setMetroError, se
     setMode('play');
   }
 
-  function enterNormalMode() {
-    setMode('normal');
+  function enterSetupMode() {
+    setMode('setup');
     setTimeLeft(DEFAULT_TIMER);
     setSelectedEdgeIds([]);
     setSubmittedEdgeIds([]);
@@ -175,7 +174,7 @@ export function useGameLogic({ user, metroGraph, events, lang, setMetroError, se
     visibleEdgeIds,
     toggleEdge,
     startRound,
-    enterNormalMode,
+    enterSetupMode,
     enterValidateMode,
   };
 }

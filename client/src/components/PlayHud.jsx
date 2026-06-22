@@ -19,7 +19,7 @@ export default function PlayHud({
   roundEvents,
   getStationLabel,
 }) {
-  // We also show the HUD in normal mode so the user can hit Ready from the same place.
+  // We also show the HUD in setup mode so the user can hit Ready from the same place.
 
   const hasStations = !!startStation && !!destinationStation;
 
@@ -46,7 +46,7 @@ export default function PlayHud({
       };
     }
 
-    if (mode === 'normal') {
+    if (mode === 'setup') {
       return {
         label: lang === 'fa' ? 'شروع' : 'Ready',
         className: 'btn btn-sm btn-success',

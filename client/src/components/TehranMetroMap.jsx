@@ -8,7 +8,7 @@ import { useMemo } from 'react';
  *    edges: [{id,from_node_id,to_node_id,line_id,sort_order}]
  *   }
  * - onSelectNode?: (node) => void
- * - mode?: 'normal' | 'play' | 'validation'
+ * - mode?: 'setup' | 'play' | 'validation'
  * - highlightedNodeIds?: string[]
  * - selectedEdgeIds?: string[]   // IMPORTANT: in validation mode, App should pass SUBMITTED ids here
  * - lang?: 'fa' | 'en'
@@ -76,13 +76,13 @@ const DEFAULT_LABEL = { dx: 12, dy: 0, anchor: 'start', baseline: 'middle' };
 export default function TehranMetroMap({
   graph,
   onSelectNode,
-  mode = 'normal',
+  mode = 'setup',
   lang = 'fa',
   highlightedNodeIds = [],
   selectedEdgeIds = [],
 }) {
   const isFa = lang === 'fa';
-  const isNormalMode = mode === 'normal';
+  const isSetupMode = mode === 'setup';
   const isPlayMode = mode === 'play';
   const isValidationMode = mode === 'validation';
 
@@ -123,11 +123,11 @@ export default function TehranMetroMap({
 
   // What edges to show
   const visibleEdges = useMemo(() => {
-    if (isNormalMode) return edgesWithPoints;
+    if (isSetupMode) return edgesWithPoints;
     if (isPlayMode) return []; // hide all lines during selection phase (your original intent)
     if (isValidationMode) return edgesWithPoints.filter((e) => selectedEdgeIds.includes(e.id));
     return edgesWithPoints;
-  }, [edgesWithPoints, isNormalMode, isPlayMode, isValidationMode, selectedEdgeIds]);
+  }, [edgesWithPoints, isSetupMode, isPlayMode, isValidationMode, selectedEdgeIds]);
 
   // What nodes to show
   const visibleNodes = useMemo(() => {
@@ -171,7 +171,7 @@ export default function TehranMetroMap({
           })}
 
         {visibleNodes.map((n) => {
-          const isIntersection = isIntersectionNode(n.id);
+          const isIntersection = n.type === 'intersection';
           const isHighlighted = highlightedNodeIds.includes(n.id);
 
           const r = isIntersection && !isPlayMode ? 8 : 6;
@@ -208,7 +208,7 @@ export default function TehranMetroMap({
           );
         })}
 
-        {isNormalMode && (
+        {isSetupMode && (
           <g transform={`translate(${bounds.x + 18}, ${bounds.y + 18})`}>
             <text
               x="0"
@@ -222,7 +222,7 @@ export default function TehranMetroMap({
 
             {(graph.lines ?? [])
               .slice()
-              .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+              .sort((a, b) => a.id.localeCompare(b.id))
               .map((l, i) => (
                 <g key={`leg-${l.id}`} transform={`translate(0, ${20 + i * 16})`}>
                   <line x1="0" y1="6" x2="34" y2="6" stroke={l.color_hex} strokeWidth="7" strokeLinecap="round" />
@@ -241,17 +241,6 @@ export default function TehranMetroMap({
         )}
       </svg>
     </div>
-  );
-}
-
-function isIntersectionNode(id) {
-  return (
-    id === 'darvazeh-dowlat' ||
-    id === 'teatr-shahr' ||
-    id === 'beheshti' ||
-    id === 'imam-khomeini' ||
-    id === 'darvazeh-shemiran' ||
-    id === 'shademan'
   );
 }
 

@@ -12,26 +12,6 @@ const EVENTS = [
   { code: 'E09', title_en: 'Meeting the love of life',  title_fa: 'دیدار با عشق زندگی',  score: +4 },
 ];
 
-function assertValidEvents(events) {
-  if (!Array.isArray(events) || events.length !== 9) {
-    throw new Error(`EVENTS must contain exactly 9 entries (got ${events?.length ?? 'null'})`);
-  }
-
-  const seen = new Set();
-  for (const e of events) {
-    if (!e.code || typeof e.code !== 'string') throw new Error('Event code missing');
-    if (seen.has(e.code)) throw new Error(`Duplicate event code: ${e.code}`);
-    seen.add(e.code);
-
-    if (typeof e.score !== 'number' || !Number.isInteger(e.score) || e.score < -4 || e.score > 4) {
-      throw new Error(`Invalid score for ${e.code}: ${e.score} (must be integer -4..4)`);
-    }
-
-    if (!e.title_en || !e.title_fa) throw new Error(`Missing titles for ${e.code}`);
-  }
-}
-
-assertValidEvents(EVENTS);
 
 function initEventsSchema(db) {
   db.exec(`
@@ -40,8 +20,7 @@ function initEventsSchema(db) {
       code      TEXT NOT NULL UNIQUE,
       title_en  TEXT NOT NULL,
       title_fa  TEXT NOT NULL,
-      score     INTEGER NOT NULL CHECK(score BETWEEN -4 AND 4),
-      is_active INTEGER NOT NULL DEFAULT 1
+      score     INTEGER NOT NULL CHECK(score BETWEEN -4 AND 4)
     );
   `);
 }
@@ -59,13 +38,12 @@ function seedEvents(db, EVENTS) {
   }
 
   const upsert = db.prepare(`
-    INSERT INTO events (code, title_en, title_fa, score, is_active)
-    VALUES (@code, @title_en, @title_fa, @score, 1)
+    INSERT INTO events (code, title_en, title_fa, score)
+    VALUES (@code, @title_en, @title_fa, @score)
     ON CONFLICT(code) DO UPDATE SET
-      title_en  = excluded.title_en,
-      title_fa  = excluded.title_fa,
-      score     = excluded.score,
-      is_active = 1;
+      title_en = excluded.title_en,
+      title_fa = excluded.title_fa,
+      score    = excluded.score;
   `);
 
   db.transaction(() => {
@@ -73,19 +51,13 @@ function seedEvents(db, EVENTS) {
   })();
 }
 
-function listEvents(db, { activeOnly = true } = {}) {
-  if (activeOnly) {
-    return db
-      .prepare('SELECT code, title_en, title_fa, score FROM events WHERE is_active = 1 ORDER BY code')
-      .all();
-  }
-
-  return db.prepare('SELECT code, title_en, title_fa, score, is_active FROM events ORDER BY code').all();
+function listEvents(db) {
+  return db.prepare('SELECT code, title_en, title_fa, score FROM events ORDER BY code').all();
 }
 
 function getEventByCode(db, code) {
   return db
-    .prepare('SELECT code, title_en, title_fa, score, is_active FROM events WHERE code = ?')
+    .prepare('SELECT code, title_en, title_fa, score FROM events WHERE code = ?')
     .get(code);
 }
 

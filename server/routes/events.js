@@ -6,9 +6,10 @@ const { listEvents } = require('../db');
 
 const router = express.Router();
 
-// GET /api/events -> list the 9 events (active only)
+// GET /api/events — list the events titles
 router.get('/', isLoggedIn, (req, res) => {
-  res.json(listEvents({ activeOnly: true }));
+  const events = listEvents();
+  res.json(events.map(({ code, title_en, title_fa }) => ({ code, title_en, title_fa })));
 });
 
 module.exports = router;

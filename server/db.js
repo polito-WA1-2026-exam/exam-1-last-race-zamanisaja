@@ -47,7 +47,7 @@ module.exports = {
   listMetroEdges: (opts) => metroDb.listMetroEdges(db, opts),
 
   // Events
-  listEvents: (opts) => eventsDb.listEvents(db, opts),
+  listEvents: () => eventsDb.listEvents(db),
   getEventByCode: (code) => eventsDb.getEventByCode(db, code),
 
   // Games (export when you’re ready to use it)

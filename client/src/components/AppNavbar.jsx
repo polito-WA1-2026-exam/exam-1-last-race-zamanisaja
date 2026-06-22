@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { forwardRef, useState } from 'react';
 import { Navbar, Nav, Container, Button, OverlayTrigger, Popover, ButtonGroup } from 'react-bootstrap';
 import LoginForm from './LoginForm.jsx';
 import RegisterForm from './RegisterForm.jsx';
 import LeaderboardPopover from './LeaderboardPopover.jsx';
 import './AuthPopover.css';
 
-export default function AppNavbar({
+const AppNavbar = forwardRef(function AppNavbar({
   user,
   summary,
   leaderboard,
@@ -14,7 +14,8 @@ export default function AppNavbar({
   onRegister,
   lang,
   onToggleLang,
-}) {
+  onBrandClick,
+}, ref) {
   const [authTab, setAuthTab] = useState('login'); // 'login' | 'register'
 
   const authPopover = (
@@ -51,20 +52,26 @@ export default function AppNavbar({
   );
 
   return (
-    <Navbar id="app-navbar" bg="dark" variant="dark" expand="lg" sticky="top">
+    <Navbar ref={ref} bg="dark" variant="dark" expand="lg" sticky="top">
       <Container>
-        <Navbar.Brand href="#">{lang === 'fa' ? 'مترو تهران' : 'Tehran Metro'}</Navbar.Brand>
+        <Navbar.Brand
+          onClick={onBrandClick}
+          style={{ cursor: 'pointer' }}
+        >
+          {lang === 'fa' ? 'مترو تهران' : 'Tehran Metro'}
+        </Navbar.Brand>
 
         <Nav className="ms-auto align-items-center">
           <Navbar.Text className="me-3">
             {lang === 'fa' ? 'بهترین امتیاز:' : 'High score:'} <strong>{summary?.highScore ?? '—'}</strong>
+            <span className="ms-2"> </span>
             <LeaderboardPopover leaderboard={leaderboard}>
               <span
                 className="ms-2 text"
                 style={{ cursor: 'pointer', textDecoration: 'underline dotted' }}
                 title="View leaderboard"
               >
-                ({lang === 'fa' ? 'جهانی:' : 'Global:'} {summary?.globalHighScore ?? '—'})
+                {lang === 'fa' ? 'جهانی:' : 'Global:'} {summary?.globalHighScore ?? '—'}
               </span>
             </LeaderboardPopover>
           </Navbar.Text>
@@ -92,7 +99,7 @@ export default function AppNavbar({
 
           {user ? (
             <Button variant="outline-light" size="sm" onClick={onLogout}>
-              Logout
+              {lang === 'fa' ? 'خروج' : 'Logout'}
             </Button>
           ) : (
             <OverlayTrigger trigger="click" placement="bottom-end" overlay={authPopover} rootClose>
@@ -106,4 +113,6 @@ export default function AppNavbar({
       </Container>
     </Navbar>
   );
-}
+});
+
+export default AppNavbar;

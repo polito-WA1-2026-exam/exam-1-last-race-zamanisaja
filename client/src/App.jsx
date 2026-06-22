@@ -1,158 +1,51 @@
-import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Container, Spinner, Alert } from 'react-bootstrap';
 import AppNavbar from './components/AppNavbar.jsx';
 import PlayHud from './components/PlayHud.jsx';
 import TehranMetroMap from './components/TehranMetroMap.jsx';
 import MetroEdgesTable from './components/MetroEdgesTable.jsx';
 import GameInstructions from './components/GameInstructions.jsx';
-import { pickRandomStations, getStationLabel, validateRoute, simulateEdgeEventsAndScore } from './components/utils.js';
+import { getStationLabel } from './components/utils.js';
 import { API } from './api.js';
-import { DEFAULT_TIMER } from './config.js';
+import { useGameLogic } from './hooks/useGameLogic.js';
 
 export default function App() {
   const [user, setUser] = useState(null); // null = not logged in
   const [checking, setChecking] = useState(true); // true while restoring session
-
-  // Prevent double-submit (can happen in React StrictMode / racing timer)
-  const validatingRef = useRef(false);
 
   const [gamesSummary, setGamesSummary] = useState({ highScore: null, globalHighScore: null });
   const [leaderboard, setLeaderboard] = useState([]);
 
   const [metroGraph, setMetroGraph] = useState(null);
   const [metroError, setMetroError] = useState('');
-  
-  const [events, setEvents] = useState([]);
-  
-  const [selectedEdgeIds, setSelectedEdgeIds] = useState([]);     // live selection (play)
-  const [submittedEdgeIds, setSubmittedEdgeIds] = useState([]);   // frozen selection (validation)
-
-  // 'normal' | 'play' | 'validation'
-  const [mode, setMode] = useState('normal');
 
   const [lang, setLang] = useState('en'); // 'en' | 'fa'
-  const [timeLeft, setTimeLeft] = useState(DEFAULT_TIMER);
-
-  const [startStation, setStartStation] = useState(null);
-  const [destinationStation, setDestinationStation] = useState(null);
-
-  const [validationResult, setValidationResult] = useState(null);
-
-  const [score, setScore] = useState(null); // null until validation happens
-  const [roundEvents, setRoundEvents] = useState([]); // events triggered during the round
 
   const [navbarHeight, setNavbarHeight] = useState(0); // for sticky HUD positioning
+  const navbarRef = useRef(null);
 
-  const showSplit = mode === 'play'; // restore 50/50 only in play mode
+  const {
+    mode,
+    timeLeft,
+    startStation,
+    destinationStation,
+    selectedEdgeIds,
+    setSelectedEdgeIds,
+    validationResult,
+    score,
+    roundEvents,
+    showSplit,
+    visibleEdgeIds,
+    toggleEdge,
+    startRound,
+    enterNormalMode,
+    enterValidateMode,
+  } = useGameLogic({ user, metroGraph, lang, setMetroError, setGamesSummary, setLeaderboard });
 
   const highlightedNodeIds = useMemo(
     () => [startStation?.id, destinationStation?.id].filter(Boolean),
     [startStation, destinationStation]
   );
-
-  // Map should see submitted edges in validation, live edges in play (normal shows all anyway)
-  const visibleEdgeIds = mode === 'validation' ? submittedEdgeIds : selectedEdgeIds;
-
-  function toggleEdge(edgeId) {
-    if (mode !== 'play') return;
-
-    setSelectedEdgeIds((prev) => {
-      const s = new Set(prev);
-      if (s.has(edgeId)) s.delete(edgeId);
-      else s.add(edgeId);
-      return Array.from(s);
-    });
-  }
-
-  function startRound() {
-    if (!user) return;
-    if (!metroGraph) return;
-
-    // set the score to null at the start of a new round (before validation)
-    setScore(null);
-
-    const pair = pickRandomStations(metroGraph, 3);
-    if (!pair) {
-      setMetroError('Could not find two stations at least 3 stations apart.');
-      return;
-    }
-
-    setMetroError('');
-    setValidationResult(null);
-
-    setSelectedEdgeIds([]);
-    setSubmittedEdgeIds([]);
-
-    setStartStation(pair.start);
-    setDestinationStation(pair.destination);
-
-    setTimeLeft(DEFAULT_TIMER);
-    setMode('play');
-  }
-
-  function enterNormalMode() {
-    setMode('normal');
-    setTimeLeft(DEFAULT_TIMER);
-
-    setSelectedEdgeIds([]);
-    setSubmittedEdgeIds([]);
-
-    setStartStation(null);
-    setDestinationStation(null);
-
-    setValidationResult(null);
-    setMetroError('');
-    setScore(null);
-    setRoundEvents([]);
-  }
-
-  const enterValidateMode = useCallback(() => {
-    if (!metroGraph) return;
-
-    // Guard: can be triggered by timer + click, or dev StrictMode quirks
-    if (validatingRef.current) return;
-    validatingRef.current = true;
-
-    const snapshot = [...selectedEdgeIds];
-
-    setSubmittedEdgeIds(snapshot);
-    setSelectedEdgeIds([]);
-
-    const result = validateRoute(metroGraph, snapshot, startStation?.id, destinationStation?.id, lang);
-    setValidationResult(result);
-
-    let finalScore = 0;
-
-    if (result.ok) {
-      if (!events.length) {
-        finalScore = 20;
-      } else {
-        const sim = simulateEdgeEventsAndScore(snapshot, events, 20);
-        finalScore = sim.finalScore;
-        setRoundEvents(sim.triggeredEvents ?? []);
-      }
-    }
-
-    setScore(finalScore);
-
-    // Save game score (for both valid and invalid routes)
-    API.createGame({ score: finalScore })
-      // Refresh navbar summary so it updates immediately after a new high score
-      .then(() => Promise.all([API.getGamesSummary(), API.getLeaderboard()]))
-      .then(([summary, lb]) => {
-        setGamesSummary(summary);
-        setLeaderboard(lb);
-      })
-      .catch((e) => console.error('[client] submit/refresh failed', e));
-
-    setMode('validation');
-  }, [metroGraph, selectedEdgeIds, startStation?.id, destinationStation?.id, lang, events]);
-
-  // Release the guard when we leave validation mode (i.e., start a new round / go back)
-  useEffect(() => {
-    if (mode !== 'play') validatingRef.current = false;
-  }, [mode]);
-
 
   // Session restore
   useEffect(() => {
@@ -198,7 +91,7 @@ export default function App() {
 
   // Measure navbar height for sticky HUD positioning
   useEffect(() => {
-    const el = document.getElementById('app-navbar');
+    const el = navbarRef.current;
     if (!el) return;
 
     const update = () => setNavbarHeight(el.getBoundingClientRect().height || 0);
@@ -214,36 +107,6 @@ export default function App() {
     };
   }, []);
 
-  // Load events
-  useEffect(() => {
-    if (!user) {
-      setEvents([]);
-      return;
-    }
-    API.listEvents()
-      .then(setEvents)
-      .catch(() => setEvents([]));
-  }, [user]);
-
-  // Countdown: only in play mode; at 0 -> auto validation
-  useEffect(() => {
-    if (mode !== 'play') return;
-
-    const intervalId = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(intervalId);
-          // Auto-validate when time expires
-          enterValidateMode();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(intervalId);
-  }, [mode, enterValidateMode]);
-
   async function handleLogout() {
     try {
       await API.logout();
@@ -252,8 +115,6 @@ export default function App() {
       enterNormalMode();
     }
   }
-
-
 
   if (checking) {
     return (
@@ -266,6 +127,7 @@ export default function App() {
   return (
     <>
       <AppNavbar
+        ref={navbarRef}
         user={user}
         summary={gamesSummary}
         leaderboard={leaderboard}
@@ -274,6 +136,7 @@ export default function App() {
         onRegister={setUser}
         lang={lang}
         onToggleLang={() => setLang((l) => (l === 'en' ? 'fa' : 'en'))}
+        onBrandClick={mode === 'validation' ? enterSetupMode : undefined}
       />
 
       <PlayHud

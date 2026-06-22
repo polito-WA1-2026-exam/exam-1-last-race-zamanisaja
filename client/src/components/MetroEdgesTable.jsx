@@ -1,6 +1,23 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Table, Form, Badge } from 'react-bootstrap';
 import { GAME_LEVEL } from '../config.js';
+
+/** Controlled checkbox that also supports the indeterminate state via a ref+effect. */
+function IndeterminateCheckbox({ checked, indeterminate, onChange, 'aria-label': ariaLabel }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = indeterminate ?? false;
+  }, [indeterminate]);
+  return (
+    <Form.Check
+      ref={ref}
+      type="checkbox"
+      checked={checked}
+      onChange={onChange}
+      aria-label={ariaLabel}
+    />
+  );
+}
 
 // level: 'easy'   – sorted edges, line column visible
 //        'medium' – sorted edges, line column hidden
@@ -61,12 +78,9 @@ export default function MetroEdgesTable({
         <thead style={{ position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
           <tr>
             <th style={{ width: 44 }}>
-              <Form.Check
-                type="checkbox"
+              <IndeterminateCheckbox
                 checked={selected.size > 0 && selected.size === edges.length}
-                ref={(el) => {
-                  if (el) el.indeterminate = selected.size > 0 && selected.size < edges.length;
-                }}
+                indeterminate={selected.size > 0 && selected.size < edges.length}
                 onChange={() => {
                   if (selected.size > 0) onClearAll?.();
                   else edges.forEach((e) => onToggleEdge?.(Number(e.id)));

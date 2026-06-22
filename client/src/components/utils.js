@@ -233,14 +233,30 @@ export function validateRoute(graph, selectedEdgeIds, startStationId, destinatio
   const found = dfs(startStationId, null);
 
   if (!found) {
+    // Second pass: can we reach the destination at all (no "use every edge" requirement)?
+    const reachUsed = new Set();
+    function canReach(node, lineId) {
+      if (node === destinationStationId) return true;
+      for (const edge of edgesByNode.get(node) || []) {
+        if (reachUsed.has(edge.id)) continue;
+        const next = nextNodeIfAllowed(node, edge, lineId);
+        if (!next) continue;
+        reachUsed.add(edge.id);
+        if (canReach(next, edge.line_id)) return true;
+        reachUsed.delete(edge.id);
+      }
+      return false;
+    }
+
+    const reachable = canReach(startStationId, null);
+
     return {
       ok: false,
-      reason:
-        'Selected segments cannot be traversed as a single route from start to destination under the line-change rules (or would require reusing a segment).',
+      reason: reachable
+        ? 'A path from start to destination exists among your segments, but not all selected segments can be used exactly once — you may have selected extra or redundant segments.'
+        : 'Selected segments cannot form a continuous route from start to destination under the line-change rules.',
     };
   }
-
-  return { ok: true, routeEdgeIds, routeNodeIds };
 }
 
 

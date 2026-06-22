@@ -9,15 +9,42 @@ const router = express.Router();
 
 router.post('/games', isLoggedIn, (req, res) => {
   const user_id = req.user.user_id;
-  const { score } = req.body ?? {};
+  const { startStationId, destinationStationId, selectedEdgeIds } = req.body ?? {};
 
-    const num = Number(score);
-    if (!Number.isFinite(num)) {
-      return res.status(422).json({ error: 'Score must be a finite number.' });
-    }
+  if (
+    typeof startStationId       !== 'string' ||
+    typeof destinationStationId !== 'string' ||
+    !Array.isArray(selectedEdgeIds)
+  ) {
+    return res.status(422).json({
+      error: 'Required: startStationId (string), destinationStationId (string), selectedEdgeIds (array).',
+    });
+  }
 
-    const intScore = Math.trunc(num);
-    const game_id = crypto.randomUUID();
+  if (startStationId.trim() === '' || destinationStationId.trim() === '') {
+    return res.status(422).json({ error: 'startStationId and destinationStationId must not be empty.' });
+  }
+
+  if (selectedEdgeIds.length > 200) {
+    return res.status(422).json({ error: 'selectedEdgeIds may not contain more than 200 items.' });
+  }
+
+  if (selectedEdgeIds.some((id) => typeof id !== 'number' && typeof id !== 'string')) {
+    return res.status(422).json({ error: 'Each item in selectedEdgeIds must be a number or string.' });
+  }
+
+  const graph  = getMetroGraph();
+  const result = validateRoute(graph, selectedEdgeIds, startStationId, destinationStationId);
+
+  let finalScore      = 0;
+  let triggeredEvents = [];
+
+  if (result.ok) {
+    const events = listEvents({ activeOnly: true });
+    ({ finalScore, triggeredEvents } = scoreRoute(result.routeEdgeIds, events));
+  }
+
+  const game_id = crypto.randomUUID();
 
     try {
       createGame({ game_id, user_id, score: intScore });

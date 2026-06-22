@@ -44,6 +44,8 @@ export default function LoginForm({ onLogin, compact }) {
           value={password}
           onChange={e => setPassword(e.target.value)}
           required
+          minLength={6}
+          maxLength={72}
         />
       </Form.Group>
       <Button type="submit" variant="primary" className="w-100" disabled={loading}>
@@ -79,6 +81,8 @@ export default function LoginForm({ onLogin, compact }) {
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
+            minLength={6}
+            maxLength={72}
           />
         </Form.Group>
 

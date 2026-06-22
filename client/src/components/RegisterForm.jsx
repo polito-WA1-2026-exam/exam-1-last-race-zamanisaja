@@ -34,6 +34,8 @@ export default function RegisterForm({ onRegister, compact }) {
           value={name}
           onChange={e => setName(e.target.value)}
           required
+          minLength={2}
+          maxLength={100}
           autoFocus
         />
       </Form.Group>
@@ -55,6 +57,8 @@ export default function RegisterForm({ onRegister, compact }) {
           value={password}
           onChange={e => setPassword(e.target.value)}
           required
+          minLength={6}
+          maxLength={72}
         />
       </Form.Group>
       <Button type="submit" variant="success" className="w-100" disabled={loading}>
@@ -78,6 +82,8 @@ export default function RegisterForm({ onRegister, compact }) {
             value={name}
             onChange={e => setName(e.target.value)}
             required
+            minLength={2}
+            maxLength={100}
             autoFocus
           />
         </Form.Group>
@@ -101,6 +107,8 @@ export default function RegisterForm({ onRegister, compact }) {
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
+            minLength={6}
+            maxLength={72}
           />
         </Form.Group>
 

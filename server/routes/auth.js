@@ -15,10 +15,23 @@ function isLoggedIn(req, res, next) {
 
 // POST /api/users  →  register (auto-login)
 router.post('/users', async (req, res) => {
-  const { name, email, password } = req.body ?? {};
+  const trimmedName  = (req.body?.name  ?? '').trim();
+  const trimmedEmail = (req.body?.email ?? '').trim().toLowerCase();
+  const { password } = req.body ?? {};
 
-  if (!name || !email || !password)
+  if (!trimmedName || !trimmedEmail || !password)
     return res.status(422).json({ error: 'Missing required fields (name, email, password).' });
+
+  if (trimmedName.length < 2 || trimmedName.length > 100)
+    return res.status(422).json({ error: 'Name must be between 2 and 100 characters.' });
+
+  if (typeof password !== 'string' || password.length < 6)
+    return res.status(422).json({ error: 'Password must be at least 6 characters.' });
+
+  if (password.length > 72)
+    return res.status(422).json({ error: 'Password must be 72 characters or fewer.' });
+
+  const { name, email } = { name: trimmedName, email: trimmedEmail };
 
   if (!/^\S+@\S+\.\S+$/.test(email))
     return res.status(422).json({ error: 'Invalid email format.' });

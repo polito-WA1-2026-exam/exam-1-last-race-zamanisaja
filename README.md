@@ -207,3 +207,12 @@ Nine random events (E01–E09) can be triggered during a round, each with a scor
 ## Language Support
 
 The UI supports **English** and **فارسی (Persian)**. Toggle between them using the language button in the navbar. All station names, event titles, HUD labels, and instructions are
+
+
+## Screenshots
+ 
+Here is a screenshot of the play guide:
+![Play Guide Screenshot](screenshots/play_guide.png)
+
+Also a screenshot of the game in action:
+![Game Screenshot](screenshots/game_play.png)
